@@ -1,7 +1,7 @@
 import api from "../service/api.ts"
 
-export const register = async (name:string, email:string, password:string) => {
-    const res = await api.post("/auth/register", {name, email, password})
+export const register = async (firstName:string, lastName:string, email:string, phone: string, password:string) => {
+    const res = await api.post("/auth/register", {firstName,lastName,email,phone,password})
     return res.data
 }
 

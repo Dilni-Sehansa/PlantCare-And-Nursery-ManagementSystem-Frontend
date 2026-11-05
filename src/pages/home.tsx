@@ -1,5 +1,9 @@
+import Navbar from "../component/common/Navbar";
+
 const Home = () => {
   return (
+    <div>
+        <Navbar />
     <main className="min-h-screen bg-green-50 flex items-center justify-center p-6">
 
       <div className="text-center">
@@ -15,6 +19,7 @@ const Home = () => {
       </div>
 
     </main>
+    </div>
   );
 };
 
