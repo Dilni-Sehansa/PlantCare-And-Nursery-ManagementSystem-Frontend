@@ -13,7 +13,7 @@ const Navbar = () => {
               alt="NURIX Logo" 
               className="h-12 w-auto object-contain"
             />
-            <span className="font-bold text-xl tracking-wide">N  U  R  I  X</span>
+            {/* <span className="font-bold text-xl tracking-wide">N  U  R  I  X</span> */}
           </Link>
 
           <div className="hidden md:flex items-center gap-6">

@@ -1,7 +1,65 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/img/logo.png";
+import React, { useState } from "react";
+import { register } from "../service/auth.ts";
+
 
 const Register = () => {
+
+  const navigate = useNavigate()
+  const [firstName, setFirstName] =useState("")
+  const [lastName, setLastName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (
+      !firstName.trim() ||
+      !lastName.trim() ||
+      !email.trim() ||
+      !phone.trim() ||
+      !password ||
+      !confirmPassword
+    ) {
+      alert("Please Enter All Fields to Register!");
+      return;
+    }
+    
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email.trim())) {
+      alert("Please Enter a Valid Email Address!");
+      return;
+    }
+
+    const phonePattern = /^0[0-9]{9}$/;
+    if (!phonePattern.test(phone.trim())) {
+      alert("Please Enter a Valid Phone Number!");
+      return;
+    }
+
+    if (password.length < 8) {
+      alert("Password Must Contain At Least 8 Characters!");
+      return;
+    }
+
+    if (!acceptedTerms) {
+      alert("Please Accept the Terms & Conditions.");
+      return;
+    }
+
+    try{
+      await register(firstName.trim(),lastName.trim(),email.trim(),phone.trim(),password);
+      navigate("/login")
+    }catch(error){
+      console.error("Error in Register", error)
+      alert("Registration Failed...")
+    }
+  }
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-green-50">
 
@@ -32,16 +90,31 @@ const Register = () => {
             </p>
           </div>
 
-          <form className="space-y-5">
+          <form className="space-y-5" onSubmit={handleRegister}>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Full Name
+                First Name
+              </label>
+              <input
+                type="text"
+                placeholder="Enter your first name"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition bg-gray-50 focus:bg-white "
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+              />
+            </div>
+
+             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Last Name
               </label>
               <input
                 type="text"
                 placeholder="Enter your full name"
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition bg-gray-50 focus:bg-white"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
               />
             </div>
 
@@ -53,6 +126,22 @@ const Register = () => {
                 type="email"
                 placeholder="Enter your email"
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition bg-gray-50 focus:bg-white"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                placeholder="Enter your Phone number"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition bg-gray-50 focus:bg-white"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                maxLength={10}
               />
             </div>
 
@@ -64,6 +153,8 @@ const Register = () => {
                 type="password"
                 placeholder="Create a password"
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition bg-gray-50 focus:bg-white"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
 
@@ -75,6 +166,8 @@ const Register = () => {
                 type="password"
                 placeholder="Confirm your password"
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition bg-gray-50 focus:bg-white"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
               />
             </div>
 
@@ -83,6 +176,8 @@ const Register = () => {
                 type="checkbox"
                 id="terms"
                 className="mt-1 w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
               />
               <label htmlFor="terms" className="text-sm text-gray-600">
                 I agree to the{" "}
@@ -112,7 +207,7 @@ const Register = () => {
 
           <div className="text-center mt-4">
             <Link
-              to="/"
+              to="/home"
               className="text-sm text-gray-500 hover:text-green-600 transition"
             >
               ← Back to Home
