@@ -1,33 +1,104 @@
-// const Login = () => {
-//   return (
-//     <main className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+// // const Login = () => {
+// //   return (
+// //     <main className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
 
-//       <div className="text-center">
+// //       <div className="text-center">
 
-//         <h1 className="text-3xl font-bold text-green-800">
-//           Login
-//         </h1>
+// //         <h1 className="text-3xl font-bold text-green-800">
+// //           Login
+// //         </h1>
 
-//         <p className="mt-3 text-gray-600">
-//           Welcome back to Plant Care.
-//         </p>
+// //         <p className="mt-3 text-gray-600">
+// //           Welcome back to Plant Care.
+// //         </p>
 
-//       </div>
+// //       </div>
 
-//     </main>
-//   );
-// };
+// //     </main>
+// //   );
+// // };
 
-// export default Login;
+// // export default Login;
 
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/img/logo.png";
+import { useState } from "react";
+import { login } from "../service/auth";
+import type { FormEvent } from "react";
+
 
 const Login = () => {
+
+    // const navigate = useNavigate()
+    // const [email, setEmail] = useState("")
+    // const [password, setPassword] = useState("")
+
+    // const handleLogin = async () => {
+    //     if(!email || !password){
+    //         return alert("Please Enter All Fields to Login!")
+    //     }
+
+    //     try{
+    //         const res = await login(email, password)
+
+    //         const resdata = res.data 
+    //         const accessToken = resdata.access_token
+    //         const refreshToken = resdata.refresh_token 
+
+    //         if(accessToken && refreshToken){
+    //             localStorage.setItem("Access Token", accessToken)
+    //             localStorage.setItem("Refresh Token", refreshToken)
+
+    //             navigate("/home", { replace: true });
+    //         }
+    //     }catch(error){
+    //         console.error("Error in Login", error)
+    //         alert("Login Failed!")
+    //     }
+    // }
+
+    const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
+
+    e.preventDefault();
+    if (!email.trim() || !password) {
+      return alert("Please Enter All Fields to Login!");
+    }
+    try {
+      setLoading(true);
+      const resdata = await login(email.trim(), password);
+
+      const accessToken = resdata.accessToken;
+      const refreshToken = resdata.refreshToken;
+
+      if (!accessToken || !refreshToken) {
+        throw new Error("Access Token or Refresh Token not received!");
+      }
+
+      localStorage.setItem("ACCESS_TOKEN", accessToken);
+      localStorage.setItem("REFRESH_TOKEN", refreshToken);
+
+      navigate("/home", { replace: true });
+
+    } catch (error) {
+
+      console.error("Error in Login:", error);
+      alert("Login Failed! Please Check Your Email and Password.");
+
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-green-50">
 
-      {/* Left Side */}
       <div className="lg:w-1/2 bg-[#e8f5e9] flex flex-col justify-center items-center p-10 relative overflow-hidden">
 
         <div>
@@ -48,12 +119,10 @@ const Login = () => {
 
       </div>
 
-      {/* Right Side */}
       <div className="lg:w-1/2 flex items-center justify-center p-6 sm:p-10">
 
         <div className="w-full max-w-md bg-white rounded-2xl shadow-lg border border-green-100 p-8 sm:p-10">
 
-          {/* Form Heading */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">
               Welcome Back!
@@ -64,9 +133,8 @@ const Login = () => {
             </p>
           </div>
 
-          <form className="space-y-5">
+          <form className="space-y-5" onSubmit={handleLogin}>
 
-            {/* Email */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 Email Address
@@ -76,10 +144,11 @@ const Login = () => {
                 type="email"
                 placeholder="Enter your email"
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition bg-gray-50 focus:bg-white"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
 
-            {/* Password */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 Password
@@ -89,10 +158,12 @@ const Login = () => {
                 type="password"
                 placeholder="Enter your password"
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition bg-gray-50 focus:bg-white"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
 
-            {/* Remember Me & Forgot Password */}
+            
             <div className="flex items-center justify-between">
 
               <div className="flex items-center gap-2">
@@ -116,17 +187,17 @@ const Login = () => {
 
             </div>
 
-            {/* Login Button */}
+            
             <button
               type="submit"
               className="w-full bg-green-700 hover:bg-green-800 text-white font-semibold py-3.5 rounded-xl shadow-md transition hover:scale-[1.02] active:scale-[0.98]"
+            //   onClick={handleLogin}
             >
               Login
             </button>
 
           </form>
 
-          {/* Register Link */}
           <p className="text-center text-sm text-gray-600 mt-6">
             Don't have an account?{" "}
 
@@ -138,7 +209,6 @@ const Login = () => {
             </Link>
           </p>
 
-          {/* Back to Home */}
           <div className="text-center mt-4">
             <Link
               to="/"
@@ -156,3 +226,6 @@ const Login = () => {
 };
 
 export default Login;
+
+
+
