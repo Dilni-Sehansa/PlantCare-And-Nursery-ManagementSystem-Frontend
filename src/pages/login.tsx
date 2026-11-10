@@ -1,63 +1,13 @@
-// // const Login = () => {
-// //   return (
-// //     <main className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
-
-// //       <div className="text-center">
-
-// //         <h1 className="text-3xl font-bold text-green-800">
-// //           Login
-// //         </h1>
-
-// //         <p className="mt-3 text-gray-600">
-// //           Welcome back to Plant Care.
-// //         </p>
-
-// //       </div>
-
-// //     </main>
-// //   );
-// // };
-
-// // export default Login;
-
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/img/logo.png";
 import { useState } from "react";
 import { login } from "../service/auth";
 import type { FormEvent } from "react";
-
+import { getUserRole } from "../hooks/useAuth";
 
 const Login = () => {
 
-    // const navigate = useNavigate()
-    // const [email, setEmail] = useState("")
-    // const [password, setPassword] = useState("")
-
-    // const handleLogin = async () => {
-    //     if(!email || !password){
-    //         return alert("Please Enter All Fields to Login!")
-    //     }
-
-    //     try{
-    //         const res = await login(email, password)
-
-    //         const resdata = res.data 
-    //         const accessToken = resdata.access_token
-    //         const refreshToken = resdata.refresh_token 
-
-    //         if(accessToken && refreshToken){
-    //             localStorage.setItem("Access Token", accessToken)
-    //             localStorage.setItem("Refresh Token", refreshToken)
-
-    //             navigate("/home", { replace: true });
-    //         }
-    //     }catch(error){
-    //         console.error("Error in Login", error)
-    //         alert("Login Failed!")
-    //     }
-    // }
-
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -84,7 +34,15 @@ const Login = () => {
       localStorage.setItem("ACCESS_TOKEN", accessToken);
       localStorage.setItem("REFRESH_TOKEN", refreshToken);
 
-      navigate("/home", { replace: true });
+      const role = getUserRole();
+
+      if (role === "SUPER_ADMIN") {
+        navigate("/super-admin", { replace: true });
+      } else if (role === "ADMIN") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/home", { replace: true });
+      }
 
     } catch (error) {
 
@@ -190,10 +148,11 @@ const Login = () => {
             
             <button
               type="submit"
+              disabled={loading}
               className="w-full bg-green-700 hover:bg-green-800 text-white font-semibold py-3.5 rounded-xl shadow-md transition hover:scale-[1.02] active:scale-[0.98]"
             //   onClick={handleLogin}
             >
-              Login
+              {loading ? "Logging in..." : "Login"}
             </button>
 
           </form>

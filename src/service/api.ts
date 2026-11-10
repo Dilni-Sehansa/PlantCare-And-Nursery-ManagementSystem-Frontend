@@ -1,11 +1,15 @@
-import axios, { AxiosError } from "axios"
+import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios"
 import { refreshTokenCall } from "./auth"
 
 const api = axios.create({
     baseURL: "http://localhost:5000/api"
 })
 
-const PUBLIC_ENDPOINTS = ["/auth/login","/auth/register"]
+const PUBLIC_ENDPOINTS = ["/auth/login","/auth/register","/auth/refresh"]
+
+type RetryRequestConfig = InternalAxiosRequestConfig & {
+  _isRefresh?: boolean;
+};
 
 api.interceptors.request.use((config) => { 
     const accessToken = localStorage.getItem("ACCESS_TOKEN")
@@ -13,22 +17,25 @@ api.interceptors.request.use((config) => {
     const isPublic = PUBLIC_ENDPOINTS.some((url) => config?.url?.includes(url))
 
     if(!isPublic && accessToken){
-        config.headers.Authorization = `Bearer ${accessToken}` // this sets the token automatically
+        config.headers.Authorization = `Bearer ${accessToken}` 
     }
 
     return config
 })
 
 api.interceptors.response.use(
-  (response) => {
-    return response
-  },
+  (response) => response,
   async (error: AxiosError) => {
-    const originalRequest: any = error.config
 
-    const isPublic = PUBLIC_ENDPOINTS.some((url) => {
+    const originalRequest = error.config as RetryRequestConfig | undefined;
+
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
+
+    const isPublic = PUBLIC_ENDPOINTS.some((url) => 
       originalRequest.url?.includes(url)
-    })
+    );
 
     if (
       error.response?.status === 401 &&
@@ -43,7 +50,7 @@ api.interceptors.response.use(
         }
 
         const refreshResponse = await refreshTokenCall(refreshToken)
-        const newAccessToken = refreshResponse.data.accessToken
+        const newAccessToken = refreshResponse.accessToken;
 
         localStorage.setItem("ACCESS_TOKEN", newAccessToken)
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
