@@ -41,6 +41,13 @@ export const getPlants = async (query: PlantQuery) => {
   };
 };
 
+export const uploadPlantImage = async (file: File) => {
+  const formData = new FormData();
+  formData.append("image", file);
+  const res = await api.post("/plants/upload-image", formData);
+  return res.data.imageUrl as string;
+};
+
 export const createPlant = async (formData: FormData) => {
   const res = await api.post("/plants", formData, {
     headers: { "Content-Type": "multipart/form-data" },

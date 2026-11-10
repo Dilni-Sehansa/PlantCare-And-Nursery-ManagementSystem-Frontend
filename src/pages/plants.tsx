@@ -11,6 +11,7 @@ import {
   updatePlant,
   deletePlant,
   getImageUrl,
+  uploadPlantImage,
 } from "../data/plants"
 import type { PlantItem, PlantMeta, WaterNeed, Sunlight } from "../data/plants";
 
@@ -268,12 +269,14 @@ const Plant = () => {
     formData.append("stock", form.stock);
     formData.append("careTips", form.careTips.trim());
 
-    if (imageFile) {
-      formData.append("image", imageFile);
-    }
-
     try {
       setSaving(true);
+
+      // Upload Plant images separately and save only the Supabase URL in the Plant document.
+      if (imageFile) {
+        const imageUrl = await uploadPlantImage(imageFile);
+        formData.append("image", imageUrl);
+      }
 
       if (editingId) {
         await updatePlant(editingId, formData);
