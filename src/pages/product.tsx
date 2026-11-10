@@ -10,6 +10,7 @@ import {
   updateProduct,
   activateProduct,
   deactivateProduct,
+  uploadProductImage,
 } from "../data/product";
 import type {
   ProductItem,
@@ -99,6 +100,9 @@ const ProductManager = () => {
   const [listError, setListError] = useState("");
   const [listSuccess, setListSuccess] = useState("");
   const [togglingId, setTogglingId] = useState("");
+  
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState("");
 
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState("");
@@ -144,11 +148,32 @@ const ProductManager = () => {
   ) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
+  
+  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setFormError("Please select a valid image.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setFormError("Image size must be less than 5MB.");
+      return;
+    }
+    setFormError("");
+    setImageFile(file);
+
+    setImagePreview(URL.createObjectURL(file));
+  };
 
   const resetForm = () => {
     setForm(emptyForm);
     setEditingId("");
     setEditingStock(null);
+    setImageFile(null);
+    setImagePreview("");
   };
 
   const clearFilters = () => {
@@ -173,6 +198,9 @@ const ProductManager = () => {
       buyingPrice: String(product.buyingPrice),
       sellingPrice: String(product.sellingPrice),
     });
+
+    setImageFile(null);
+    setImagePreview(product.imageUrl || "");
 
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
@@ -210,10 +238,16 @@ const ProductManager = () => {
       unit: form.unit.trim(),
       buyingPrice: Number(form.buyingPrice),
       sellingPrice: Number(form.sellingPrice),
+      imageUrl: imagePreview,
     };
 
     try {
       setSaving(true);
+
+      if (imageFile) {
+        const uploadedImageUrl = await uploadProductImage(imageFile);
+        payload.imageUrl = uploadedImageUrl;
+      }
 
       if (editingId) {
         await updateProduct(editingId, payload);
@@ -343,6 +377,32 @@ const ProductManager = () => {
               )}
 
               <form className="space-y-5" onSubmit={handleSubmit}>
+
+                <div>
+                  <label htmlFor="productImage" className={labelClass}>
+                    Product Image
+                  </label>
+                  <input
+                    id="productImage"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className={inputClass}
+                  />
+                  {imagePreview && (
+                    <div className="mt-3">
+                      <img
+                        src={imagePreview}
+                        alt="Product Preview"
+                        className="w-full h-44 object-cover rounded-xl border border-green-200"
+                      />
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-400 mt-2">
+                    Maximum size: 5MB. Supported image formats.
+                  </p>
+                </div>
+
                 <div>
                   <label htmlFor="productName" className={labelClass}>
                     Product Name
@@ -599,6 +659,20 @@ const ProductManager = () => {
                         }`}
                       >
 
+                        {product.imageUrl ? (
+                          <img
+                            src={product.imageUrl}
+                            alt={product.productName}
+                            className="w-full h-44 object-cover rounded-xl mb-4"
+                          />
+                        ) : (
+                          <div className="w-full h-44 bg-green-50 rounded-xl mb-4 flex items-center justify-center">
+                            <span className="text-5xl">
+                              {CATEGORY_ICON[product.category]}
+                            </span>
+                          </div>
+                        )}
+                        
                         <div className="flex items-start gap-3 mb-3">
                           <div
                             className={`w-11 h-11 shrink-0 rounded-full border flex items-center justify-center text-xl ${

@@ -20,6 +20,7 @@ export interface ProductItem {
   sellingPrice: number;
   stock: number;
   status: ProductStatus;
+  imageUrl?: string; 
 }
  
 export interface ProductPayload {
@@ -29,6 +30,7 @@ export interface ProductPayload {
   unit: string;
   buyingPrice: number;
   sellingPrice: number;
+  imageUrl?: string; 
 }
  
 export interface ProductQuery {
@@ -44,8 +46,16 @@ export const getProducts = async (query: ProductQuery) => {
     products: res.data.products as ProductItem[],
   };
 };
+
+export const uploadProductImage = async (file: File) => {
+  const formData = new FormData();
+  formData.append("image", file);
+  const res = await api.post("/products/upload-image", formData);
+  return res.data.imageUrl as string;
+};
+
  export const createProduct = async (payload: ProductPayload) => {
-  const res = await api.post("/products", payload);
+  const res = await api.post("/products/create", payload);
   return res.data;
 };
  

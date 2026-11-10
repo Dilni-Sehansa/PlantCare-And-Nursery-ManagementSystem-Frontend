@@ -12,6 +12,7 @@ import Plant from "../pages/plants";
 import PlantType from "../pages/plantType";
 import Products from "../pages/product";
 import SuperAdmin from "../pages/superAdmin";
+import Admin from "../pages/admin";
 
 const AppRouter = () => {
   return (
@@ -23,6 +24,7 @@ const AppRouter = () => {
         <Route path="/plants" element={<Plant />} />
         <Route path="/plantType" element={<PlantType />} />
         <Route path="/admin/products" element={<Products />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="/super-admin" element={<SuperAdmin />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

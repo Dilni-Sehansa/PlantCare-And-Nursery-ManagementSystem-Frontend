@@ -1,7 +1,17 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "../../assets/img/logo.png"
+import { getUserRole } from "../../hooks/useAuth";
 
 const Navbar = () => {
+  const navigate = useNavigate();
+  const role = getUserRole();
+
+  const handleLogout = () => {
+    localStorage.removeItem("ACCESS_TOKEN");
+    localStorage.removeItem("REFRESH_TOKEN");
+    navigate("/login", { replace: true });
+  };
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/20 backdrop-blur-xl border-b border-green-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -26,15 +36,37 @@ const Navbar = () => {
             <Link to="/products" className="hover:text-green-500 transition">
               Product
             </Link>
-            <Link to="/login" className="hover:text-green-500 transition">
-              Login
-            </Link>
-            <Link
-              to="/register"
-              className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg font-medium transition"
-            >
-              Register
-            </Link>
+            {role === "ADMIN" || role === "SUPER_ADMIN" ? (
+              <Link to="/admin" className="hover:text-green-500 transition">
+                Admin
+              </Link>
+            ) : null}
+            {role === "SUPER_ADMIN" ? (
+              <Link to="/super-admin" className="hover:text-green-500 transition">
+                Super Admin
+              </Link>
+            ) : null}
+            {role ? (
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg font-medium transition"
+              >
+                Logout
+              </button>
+            ) : (
+              <>
+                <Link to="/login" className="hover:text-green-500 transition">
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg font-medium transition"
+                >
+                  Register
+                </Link>
+              </>
+            )}
           </div>
 
           <div className="md:hidden">
