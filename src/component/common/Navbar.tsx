@@ -36,10 +36,25 @@ const Navbar = () => {
             <Link to="/products" className="hover:text-green-500 transition">
               Product
             </Link>
+            {role === "USER" ? (
+              <>
+                <Link to="/orders" className="hover:text-green-500 transition">
+                  Shop
+                </Link>
+                <Link to="/my-orders" className="hover:text-green-500 transition">
+                  My Orders
+                </Link>
+              </>
+            ) : null}
             {role === "ADMIN" || role === "SUPER_ADMIN" ? (
-              <Link to="/admin" className="hover:text-green-500 transition">
-                Admin
-              </Link>
+              <>
+                <Link to="/admin" className="hover:text-green-500 transition">
+                  Admin
+                </Link>
+                <Link to="/admin/orders" className="hover:text-green-500 transition">
+                  Orders
+                </Link>
+              </>
             ) : null}
             {role === "SUPER_ADMIN" ? (
               <Link to="/super-admin" className="hover:text-green-500 transition">

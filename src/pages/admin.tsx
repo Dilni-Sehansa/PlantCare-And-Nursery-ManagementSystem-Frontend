@@ -157,9 +157,18 @@ const AdminPage = () => {
               )}
 
               {activeSection === "orders" && (
-                <p className="text-gray-600 mt-6">
-                  Order management is not available yet.
-                </p>
+                <div className="mt-6 rounded-2xl border border-green-100 bg-green-50 p-6">
+                  <h2 className="text-xl font-bold text-gray-900">Order operations</h2>
+                  <p className="mt-2 text-gray-600">
+                    Review customer orders, update their status, and manage cancelled orders.
+                  </p>
+                  <Link
+                    to="/admin/orders"
+                    className="mt-5 inline-block rounded-xl bg-green-700 px-6 py-3 font-semibold text-white transition hover:bg-green-800"
+                  >
+                    Open Order Management
+                  </Link>
+                </div>
               )}
             </section>
           </main>
