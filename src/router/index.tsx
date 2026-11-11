@@ -16,6 +16,7 @@ import Admin from "../pages/admin";
 import Orders from "../pages/orders";
 import MyOrders from "../pages/myOrders";
 import AdminOrders from "../pages/adminOrders";
+import Suppliers from "../pages/suppliers";
 
 const AppRouter = () => {
   return (
@@ -30,6 +31,7 @@ const AppRouter = () => {
         <Route path="/my-orders" element={<MyOrders />} />
         <Route path="/admin/products" element={<Products />} />
         <Route path="/admin/orders" element={<AdminOrders />} />
+        <Route path="/admin/suppliers" element={<Suppliers />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/super-admin" element={<SuperAdmin />} />
         <Route path="*" element={<Navigate to="/" replace />} />

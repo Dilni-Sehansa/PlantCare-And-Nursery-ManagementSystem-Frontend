@@ -3,13 +3,14 @@ import { Link } from "react-router-dom";
 import Navbar from "../component/common/Navbar";
 import { getUserRole } from "../hooks/useAuth";
 
-type Section = "dashboard" | "plants" | "products" | "orders";
+type Section = "dashboard" | "plants" | "products" | "orders" | "suppliers";
 
 const sectionTitles: Record<Section, string> = {
   dashboard: "Dashboard",
   plants: "Plants",
   products: "Products",
   orders: "Orders",
+  suppliers: "Suppliers",
 };
 
 const navItems: { id: Section; label: string; icon: string }[] = [
@@ -17,6 +18,7 @@ const navItems: { id: Section; label: string; icon: string }[] = [
   { id: "plants", label: "Plants", icon: "🪴" },
   { id: "products", label: "Products", icon: "📦" },
   { id: "orders", label: "Orders", icon: "🧾" },
+  { id: "suppliers", label: "Suppliers", icon: "🚚" },
 ];
 
 const AccessDenied = ({ loggedIn }: { loggedIn: boolean }) => (
@@ -124,6 +126,18 @@ const AdminPage = () => {
                         Manage products →
                       </span>
                     </Link>
+                    <Link
+                      to="/admin/suppliers"
+                      className="bg-green-50 border border-green-100 rounded-xl p-6 hover:shadow-md transition"
+                    >
+                      <h2 className="text-xl font-bold text-green-700">Suppliers</h2>
+                      <p className="text-sm text-gray-600 mt-2">
+                        Manage supplier contacts and status.
+                      </p>
+                      <span className="inline-block text-sm font-semibold text-green-700 mt-4">
+                        Manage suppliers →
+                      </span>
+                    </Link>
                   </div>
                 </>
               )}
@@ -167,6 +181,21 @@ const AdminPage = () => {
                     className="mt-5 inline-block rounded-xl bg-green-700 px-6 py-3 font-semibold text-white transition hover:bg-green-800"
                   >
                     Open Order Management
+                  </Link>
+                </div>
+              )}
+
+              {activeSection === "suppliers" && (
+                <div className="mt-6 rounded-2xl border border-green-100 bg-green-50 p-6">
+                  <h2 className="text-xl font-bold text-gray-900">Supplier operations</h2>
+                  <p className="mt-2 text-gray-600">
+                    Add suppliers, update contact details, and manage active status.
+                  </p>
+                  <Link
+                    to="/admin/suppliers"
+                    className="mt-5 inline-block rounded-xl bg-green-700 px-6 py-3 font-semibold text-white transition hover:bg-green-800"
+                  >
+                    Open Supplier Management
                   </Link>
                 </div>
               )}

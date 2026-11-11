@@ -3,11 +3,7 @@ import type { ChangeEvent, FormEvent } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import Navbar from "../component/common/Navbar";
-import {
-  AlertBox,
-  RoleBadge,
-  StatusBadge,
-} from "../component/superAdmin/badges";
+import { AlertBox, RoleBadge, StatusBadge} from "../component/superAdmin/badges";
 import { getUserRole } from "../hooks/useAuth";
 import {
   createAdmin,
@@ -17,14 +13,9 @@ import {
   updateUserRole,
   updateUserStatus,
 } from "../service/user";
-import type {
-  UpdateAdminPayload,
-  UserItem,
-  UserStats,
-} from "../service/user";
+import type { UpdateAdminPayload, UserItem, UserStats } from "../service/user";
 
 type Section = "dashboard" | "user-management" | "create-admin";
-
 type RoleFilter = "ALL" | "USER" | "ADMIN";
 type StatusFilter = "ALL" | "ACTIVE" | "INACTIVE";
 
@@ -910,7 +901,6 @@ const SuperAdminDashboard = () => {
                 onClick={() => setSelectedUser(null)}
                 className="text-2xl text-gray-500 hover:text-gray-800"
               >
-                ×
               </button>
             </div>
 
