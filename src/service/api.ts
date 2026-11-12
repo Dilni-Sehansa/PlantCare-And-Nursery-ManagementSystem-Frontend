@@ -5,7 +5,11 @@ const api = axios.create({
     baseURL: "http://localhost:5000/api"
 })
 
-const PUBLIC_ENDPOINTS = ["/auth/login","/auth/register","/auth/refresh"]
+const PUBLIC_ENDPOINTS = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/refresh",
+]
 
 type RetryRequestConfig = InternalAxiosRequestConfig & {
   _isRefresh?: boolean;
@@ -69,4 +73,3 @@ api.interceptors.response.use(
 )
 
 export default api
-

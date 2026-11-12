@@ -4,6 +4,7 @@ import { useState } from "react";
 import { login } from "../service/auth";
 import type { FormEvent } from "react";
 import { getUserRole } from "../hooks/useAuth";
+import PasswordVisibilityToggle from "../component/common/PasswordVisibilityToggle";
 
 const Login = () => {
 
@@ -11,6 +12,7 @@ const Login = () => {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
 
@@ -112,13 +114,19 @@ const Login = () => {
                 Password
               </label>
 
-              <input
-                type="password"
-                placeholder="Enter your password"
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition bg-gray-50 focus:bg-white"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  className="w-full px-4 pr-12 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition bg-gray-50 focus:bg-white"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <PasswordVisibilityToggle
+                  visible={showPassword}
+                  onToggle={() => setShowPassword((visible) => !visible)}
+                />
+              </div>
             </div>
 
             
@@ -185,6 +193,5 @@ const Login = () => {
 };
 
 export default Login;
-
 
 
