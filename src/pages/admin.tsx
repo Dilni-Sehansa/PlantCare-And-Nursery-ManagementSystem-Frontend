@@ -3,7 +3,14 @@ import { Link } from "react-router-dom";
 import Navbar from "../component/common/Navbar";
 import { getUserRole } from "../hooks/useAuth";
 
-type Section = "dashboard" | "plants" | "products" | "orders" | "suppliers";
+type Section =
+  | "dashboard"
+  | "plants"
+  | "products"
+  | "orders"
+  | "suppliers"
+  | "stock"
+  | "management-center";
 
 const sectionTitles: Record<Section, string> = {
   dashboard: "Dashboard",
@@ -11,6 +18,8 @@ const sectionTitles: Record<Section, string> = {
   products: "Products",
   orders: "Orders",
   suppliers: "Suppliers",
+  stock: "Stock Management",
+  "management-center": "Management Center",
 };
 
 const navItems: { id: Section; label: string; icon: string }[] = [
@@ -19,6 +28,8 @@ const navItems: { id: Section; label: string; icon: string }[] = [
   { id: "products", label: "Products", icon: "📦" },
   { id: "orders", label: "Orders", icon: "🧾" },
   { id: "suppliers", label: "Suppliers", icon: "🚚" },
+  { id: "stock", label: "Stock", icon: "📊" },
+  { id: "management-center", label: "Management Center", icon: "🗂️" },
 ];
 
 const AccessDenied = ({ loggedIn }: { loggedIn: boolean }) => (
@@ -138,6 +149,30 @@ const AdminPage = () => {
                         Manage suppliers →
                       </span>
                     </Link>
+                    <Link
+                      to="/admin/stock"
+                      className="bg-green-50 border border-green-100 rounded-xl p-6 hover:shadow-md transition"
+                    >
+                      <h2 className="text-xl font-bold text-green-700">Stock</h2>
+                      <p className="text-sm text-gray-600 mt-2">
+                        Monitor plant and product quantities.
+                      </p>
+                      <span className="inline-block text-sm font-semibold text-green-700 mt-4">
+                        Manage stock →
+                      </span>
+                    </Link>
+                    <Link
+                      to="/admin/management-center"
+                      className="bg-green-50 border border-green-100 rounded-xl p-6 hover:shadow-md transition"
+                    >
+                      <h2 className="text-xl font-bold text-green-700">Management Center</h2>
+                      <p className="text-sm text-gray-600 mt-2">
+                        Manage purchases, internal stock, usage, and sales.
+                      </p>
+                      <span className="inline-block text-sm font-semibold text-green-700 mt-4">
+                        Open Management Center →
+                      </span>
+                    </Link>
                   </div>
                 </>
               )}
@@ -196,6 +231,37 @@ const AdminPage = () => {
                     className="mt-5 inline-block rounded-xl bg-green-700 px-6 py-3 font-semibold text-white transition hover:bg-green-800"
                   >
                     Open Supplier Management
+                  </Link>
+                </div>
+              )}
+
+              {activeSection === "stock" && (
+                <div className="mt-6 rounded-2xl border border-green-100 bg-green-50 p-6">
+                  <h2 className="text-xl font-bold text-gray-900">Stock operations</h2>
+                  <p className="mt-2 text-gray-600">
+                    Review current plant and product stock, update plant quantities,
+                    and record product restocks.
+                  </p>
+                  <Link
+                    to="/admin/stock"
+                    className="mt-5 inline-block rounded-xl bg-green-700 px-6 py-3 font-semibold text-white transition hover:bg-green-800"
+                  >
+                    Open Stock Management
+                  </Link>
+                </div>
+              )}
+
+              {activeSection === "management-center" && (
+                <div className="mt-6 rounded-2xl border border-green-100 bg-green-50 p-6">
+                  <h2 className="text-xl font-bold text-gray-900">Management Center</h2>
+                  <p className="mt-2 text-gray-600">
+                    Manage stock purchases, internal stock, internal usage, and direct product sales.
+                  </p>
+                  <Link
+                    to="/admin/management-center"
+                    className="mt-5 inline-block rounded-xl bg-green-700 px-6 py-3 font-semibold text-white transition hover:bg-green-800"
+                  >
+                    Open Management Center
                   </Link>
                 </div>
               )}
