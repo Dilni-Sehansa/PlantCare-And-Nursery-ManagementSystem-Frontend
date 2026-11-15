@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import Navbar from "../component/common/Navbar";
 import { getPlantTypes } from "../data/plantType";
@@ -38,6 +38,8 @@ const emptyForm = {
   price: "",
   stock: "",
   careTips: "",
+  isUpcoming: false,
+  availableAt: "",
 };
 
 const inputClass =
@@ -49,6 +51,29 @@ const getErrorMessage = (error: unknown, fallback: string) => {
     return error.response?.data?.message || fallback;
   }
   return fallback;
+};
+
+const toColomboInputValue = (value: string) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Colombo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((value) => value.type === type)?.value || "";
+  return `${part("year")}-${part("month")}-${part("day")}T${part("hour")}:${part("minute")}`;
+};
+
+const fromColomboInputValue = (value: string) => {
+  if (!value) return "";
+  const date = new Date(`${value}:00+05:30`);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString();
 };
 
 const PlantImage = ({ src, alt }: { src: string; alt: string }) => {
@@ -78,6 +103,17 @@ const Plant = () => {
   const [meta, setMeta] = useState<PlantMeta | null>(null);
   const [page, setPage] = useState(1);
   const [categoryFilter, setCategoryFilter] = useState<Category | "All">("All");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const categoryFromUrl = searchParams.get("category");
+  useEffect(() => {
+  if (CATEGORIES.includes(categoryFromUrl as Category)) {
+    setCategoryFilter(categoryFromUrl as Category);
+  } else {
+    setCategoryFilter("All");
+  }
+
+  setPage(1);
+}, [categoryFromUrl]);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
@@ -111,6 +147,7 @@ const Plant = () => {
           limit: PAGE_SIZE,
           category: categoryFilter === "All" ? undefined : categoryFilter,
           search: search || undefined,
+          includeUpcoming: true,
         });
 
         setPlants(result.plants);
@@ -178,6 +215,10 @@ const Plant = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const handleUpcomingChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, isUpcoming: e.target.checked });
+  };
+
   const handleCategoryChange = (e: ChangeEvent<HTMLSelectElement>) => {
     setForm({ ...form, category: e.target.value as Category, plantType: "" });
   };
@@ -219,6 +260,10 @@ const Plant = () => {
       price: String(plant.price),
       stock: String(plant.stock),
       careTips: plant.careTips || "",
+      isUpcoming: plant.isUpcoming || false,
+      availableAt: plant.availableAt
+        ? toColomboInputValue(plant.availableAt)
+        : "",
     });
     setImageFile(null);
     setExistingImage(plant.image || "");
@@ -257,6 +302,14 @@ const Plant = () => {
     ) {
       return setFormError("Stock must be a whole number (0 or more).");
     }
+    if (form.isUpcoming && !form.availableAt) {
+      return setFormError(
+        "Set the expected release date and time for an upcoming plant."
+      );
+    }
+    if (form.isUpcoming && !fromColomboInputValue(form.availableAt)) {
+      return setFormError("Enter a valid expected release date and time.");
+    }
 
     const formData = new FormData();
     formData.append("name", form.name.trim());
@@ -268,6 +321,13 @@ const Plant = () => {
     formData.append("price", form.price);
     formData.append("stock", form.stock);
     formData.append("careTips", form.careTips.trim());
+    formData.append("isUpcoming", String(form.isUpcoming));
+    if (form.isUpcoming) {
+      formData.append(
+        "availableAt",
+        fromColomboInputValue(form.availableAt)
+      );
+    }
 
     try {
       setSaving(true);
@@ -328,6 +388,13 @@ const Plant = () => {
   const handleFilterChange = (option: Category | "All") => {
     setCategoryFilter(option);
     setPage(1);
+    const nextParams = new URLSearchParams(searchParams);
+    if (option === "All") {
+      nextParams.delete("category");
+    } else {
+      nextParams.set("category", option);
+    }
+    setSearchParams(nextParams, { replace: true });
   };
 
   return (
@@ -620,6 +687,40 @@ const Plant = () => {
                   />
                 </div>
 
+                <div className="rounded-xl border border-green-100 bg-green-50/70 p-4">
+                  <label className="flex items-start gap-3 text-sm font-medium text-gray-700">
+                    <input
+                      type="checkbox"
+                      name="isUpcoming"
+                      checked={form.isUpcoming}
+                      onChange={handleUpcomingChange}
+                      className="mt-0.5 h-4 w-4 rounded border-green-300 text-green-700 focus:ring-green-500"
+                    />
+                    <span>
+                      Mark as a coming soon plant
+                      <span className="mt-1 block text-xs font-normal text-gray-500">
+                        It will appear in Coming Soon until its release date and time.
+                      </span>
+                    </span>
+                  </label>
+                  {form.isUpcoming && (
+                    <div className="mt-4">
+                      <label htmlFor="availableAt" className={labelClass}>
+                        Expected Release (Asia/Colombo)
+                      </label>
+                      <input
+                        id="availableAt"
+                        name="availableAt"
+                        type="datetime-local"
+                        required
+                        className={inputClass}
+                        value={form.availableAt}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex gap-3">
                   <button
                     type="submit"
@@ -757,6 +858,24 @@ const Plant = () => {
                         <p className="text-xs text-gray-400 mb-3">
                           {plant.plantId} · {plant.plantType}
                         </p>
+
+                        {plant.isUpcoming && plant.availableAt && (
+                          <p
+                            className={`mb-3 inline-flex w-fit rounded-full border px-3 py-1 text-xs font-semibold ${
+                              new Date(plant.availableAt).getTime() > Date.now()
+                                ? "border-amber-200 bg-amber-50 text-amber-700"
+                                : "border-green-200 bg-green-50 text-green-700"
+                            }`}
+                          >
+                            {new Date(plant.availableAt).getTime() > Date.now()
+                              ? `Coming soon · ${new Intl.DateTimeFormat("en-LK", {
+                                  timeZone: "Asia/Colombo",
+                                  dateStyle: "medium",
+                                  timeStyle: "short",
+                                }).format(new Date(plant.availableAt))}`
+                              : "Released"}
+                          </p>
+                        )}
 
                         <div className="flex flex-wrap gap-2 mb-4">
                           <span className="bg-green-50 text-gray-600 text-xs px-3 py-1 rounded-full border border-green-100">

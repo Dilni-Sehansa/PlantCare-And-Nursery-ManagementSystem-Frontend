@@ -24,7 +24,7 @@ const LOW_STOCK_LIMIT = 10;
 
 type ItemTypeFilter = "All" | "Plant" | "Product";
 type StockFilter = "All" | "In stock" | "Low stock" | "Out of stock";
-type StockRecordBase = {
+type StockRecord = {
   id: string;
   itemId: string;
   name: string;
@@ -32,10 +32,10 @@ type StockRecordBase = {
   quantity: number;
   unit: string;
   status: string;
-};
-type StockRecord =
-  | (StockRecordBase & { type: "Plant"; item: PlantItem })
-  | (StockRecordBase & { type: "Product"; item: ProductItem });
+} & (
+  | { type: "Plant"; item: PlantItem }
+  | { type: "Product"; item: ProductItem }
+);
 
 const inputClass =
   "w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition bg-gray-50 focus:bg-white";
@@ -528,7 +528,7 @@ const StockPage = () => {
                               <button
                                 type="button"
                                 disabled={item.item.status !== "Active"}
-                                onClick={() => openRestockForm(item.item as ProductItem)}
+                                onClick={() => openRestockForm(item.item)}
                                 className="rounded-lg border border-green-200 px-3 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50 transition"
                               >
                                 Restock

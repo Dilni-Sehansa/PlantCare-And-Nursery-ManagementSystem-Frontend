@@ -17,6 +17,8 @@ export interface PlantItem {
   stock: number;
   image: string;
   careTips: string;
+  isUpcoming?: boolean;
+  availableAt?: string | null;
 }
 
 export interface PlantMeta {
@@ -31,6 +33,8 @@ export interface PlantQuery {
   limit?: number;
   category?: Category;
   search?: string;
+  upcomingOnly?: boolean;
+  includeUpcoming?: boolean;
 }
 
 export const getPlants = async (query: PlantQuery) => {
