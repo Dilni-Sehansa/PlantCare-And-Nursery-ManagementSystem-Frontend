@@ -1,15 +1,16 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios"
-import { refreshTokenCall } from "./auth"
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api"
 
 const api = axios.create({
-    baseURL: "http://localhost:5000/api"
+    baseURL: API_BASE_URL,
 })
 
 const PUBLIC_ENDPOINTS = [
   "/auth/login",
   "/auth/register",
-  "/auth/refresh",
-]
+  "/auth/refresh-token",
+];
 
 type RetryRequestConfig = InternalAxiosRequestConfig & {
   _isRefresh?: boolean;
@@ -29,8 +30,8 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError) => {
 
+  async (error: AxiosError) => {
     const originalRequest = error.config as RetryRequestConfig | undefined;
 
     if (!originalRequest) {
@@ -48,24 +49,34 @@ api.interceptors.response.use(
     ) {
       originalRequest._isRefresh = true
       try {
-        const refreshToken = localStorage.getItem("REFRESH_TOKEN") as string
+        const refreshToken = localStorage.getItem("REFRESH_TOKEN")
         if (!refreshToken) {
           throw new Error("No refresh token available")
         }
 
-        const refreshResponse = await refreshTokenCall(refreshToken)
-        const newAccessToken = refreshResponse.accessToken;
+        // const refreshResponse = await refreshTokenCall(refreshToken)
+        const refreshResponse = await axios.post<{accessToken: string;}>(
+          `${API_BASE_URL}/auth/refresh-token`,
+          { refreshToken }
+        )
+
+        const newAccessToken = refreshResponse.data.accessToken;
+
+        if (!newAccessToken) {
+          throw new Error("No access token received from refresh")
+        }
 
         localStorage.setItem("ACCESS_TOKEN", newAccessToken)
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
 
-        return axios(originalRequest)
+        return api(originalRequest)
+
       } catch (err) {
         localStorage.removeItem("ACCESS_TOKEN")
         localStorage.removeItem("REFRESH_TOKEN")
         window.location.href = "/login"
-        console.error(err)
-        return Promise.reject(error)
+        console.error("Token refresh failed:", err);
+        return Promise.reject(err)
       }
     }
     return Promise.reject(error)
