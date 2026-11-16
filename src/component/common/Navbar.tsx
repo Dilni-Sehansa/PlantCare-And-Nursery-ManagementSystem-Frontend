@@ -1,16 +1,137 @@
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../../assets/img/logo.png"
 import { getUserRole } from "../../hooks/useAuth";
+import { useState } from "react";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const role = getUserRole();
 
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen((prev) => !prev);
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("ACCESS_TOKEN");
     localStorage.removeItem("REFRESH_TOKEN");
+
+    setIsMobileMenuOpen(false);
     navigate("/login", { replace: true });
   };
+
+   const navigationLinks = (
+    <>
+      <Link
+        to="/"
+        onClick={closeMobileMenu}
+        className="hover:text-green-500 transition"
+      >
+        Home
+      </Link>
+
+      <Link
+        to="/plants"
+        onClick={closeMobileMenu}
+        className="hover:text-green-500 transition"
+      >
+        Plants
+      </Link>
+
+      {role === "ADMIN" && (
+        <Link
+          to="/products"
+          onClick={closeMobileMenu}
+          className="hover:text-green-500 transition"
+        >
+          Product
+        </Link>
+      )}
+
+      {role === "USER" && (
+        <>
+          <Link
+            to="/orders"
+            onClick={closeMobileMenu}
+            className="hover:text-green-500 transition"
+          >
+            Shop
+          </Link>
+
+          <Link
+            to="/my-orders"
+            onClick={closeMobileMenu}
+            className="hover:text-green-500 transition"
+          >
+            My Orders
+          </Link>
+        </>
+      )}
+
+      {(role === "ADMIN" || role === "SUPER_ADMIN") && (
+        <>
+          <Link
+            to="/admin"
+            onClick={closeMobileMenu}
+            className="hover:text-green-500 transition"
+          >
+            Admin
+          </Link>
+
+          <Link
+            to="/admin/orders"
+            onClick={closeMobileMenu}
+            className="hover:text-green-500 transition"
+          >
+            Orders
+          </Link>
+        </>
+      )}
+
+      {role === "SUPER_ADMIN" && (
+        <Link
+          to="/super-admin"
+          onClick={closeMobileMenu}
+          className="hover:text-green-500 transition"
+        >
+          Super Admin
+        </Link>
+      )}
+
+      {role ? (
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg font-medium transition"
+        >
+          Logout
+        </button>
+      ) : (
+        <>
+          <Link
+            to="/login"
+            onClick={closeMobileMenu}
+            className="hover:text-green-500 transition"
+          >
+            Login
+          </Link>
+
+          <Link
+            to="/register"
+            onClick={closeMobileMenu}
+            className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg font-medium transition text-center"
+          >
+            Register
+          </Link>
+        </>
+      )}
+    </>
+  );
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/20 backdrop-blur-xl border-b border-green-200 shadow-sm">
@@ -27,72 +148,29 @@ const Navbar = () => {
           </Link>
 
           <div className="hidden md:flex items-center gap-6">
-            <Link to="/" className="hover:text-green-500 transition">
-              Home
-            </Link>
-            <Link to="/plants" className="hover:text-green-500 transition">
-              Plants
-            </Link>
-            {role === "ADMIN" && (
-              <Link to="/products" className="hover:text-green-500 transition">
-                Product
-              </Link>
-            )}
-            {/* <Link to="/products" className="hover:text-green-500 transition">
-              Product
-            </Link> */}
-            {role === "USER" ? (
-              <>
-                <Link to="/orders" className="hover:text-green-500 transition">
-                  Shop
-                </Link>
-                <Link to="/my-orders" className="hover:text-green-500 transition">
-                  My Orders
-                </Link>
-              </>
-            ) : null}
-            {role === "ADMIN" || role === "SUPER_ADMIN" ? (
-              <>
-                <Link to="/admin" className="hover:text-green-500 transition">
-                  Admin
-                </Link>
-                <Link to="/admin/orders" className="hover:text-green-500 transition">
-                  Orders
-                </Link>
-              </>
-            ) : null}
-            {role === "SUPER_ADMIN" ? (
-              <Link to="/super-admin" className="hover:text-green-500 transition">
-                Super Admin
-              </Link>
-            ) : null}
-            {role ? (
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg font-medium transition"
-              >
-                Logout
-              </button>
-            ) : (
-              <>
-                <Link to="/login" className="hover:text-green-500 transition">
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg font-medium transition"
-                >
-                  Register
-                </Link>
-              </>
-            )}
+            {navigationLinks}
           </div>
 
           <div className="md:hidden">
-            <button className="text-white text-2xl">☰</button>
+            <button
+              type="button"
+              onClick={toggleMobileMenu}
+              aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={isMobileMenuOpen}
+              className="text-green-800 text-2xl p-2 hover:text-green-500 transition"
+            >
+              {isMobileMenuOpen ? "✕" : "☰"}
+            </button>
           </div>
         </div>
+
+        {isMobileMenuOpen && (
+          <div className="md:hidden border-t border-green-200 py-4">
+            <div className="flex flex-col items-center gap-4 text-gray-800 font-medium">
+              {navigationLinks}
+            </div>
+          </div>
+        )}
       </div>
     </nav>
   );

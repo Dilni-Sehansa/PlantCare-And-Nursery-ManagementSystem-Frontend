@@ -10,10 +10,16 @@ const Login = () => {
 
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(
+    () => localStorage.getItem("REMEMBERED_EMAIL") || ""
+  );
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  const [rememberMe, setRememberMe] = useState(
+    () => localStorage.getItem("REMEMBER_ME") === "true"
+  );
+  
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
@@ -36,6 +42,14 @@ const Login = () => {
       localStorage.setItem("ACCESS_TOKEN", accessToken);
       localStorage.setItem("REFRESH_TOKEN", refreshToken);
 
+      if (rememberMe) {
+        localStorage.setItem("REMEMBER_ME", "true");
+        localStorage.setItem("REMEMBERED_EMAIL", email.trim());
+      } else {
+        localStorage.removeItem("REMEMBER_ME");
+        localStorage.removeItem("REMEMBERED_EMAIL");
+      }
+      
       const role = getUserRole();
 
       if (role === "SUPER_ADMIN") {
@@ -137,6 +151,8 @@ const Login = () => {
                   type="checkbox"
                   id="remember"
                   className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                 />
 
                 <label htmlFor="remember" className="text-sm text-gray-600">
