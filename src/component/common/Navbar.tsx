@@ -33,9 +33,14 @@ const Navbar = () => {
             <Link to="/plants" className="hover:text-green-500 transition">
               Plants
             </Link>
-            <Link to="/products" className="hover:text-green-500 transition">
+            {role === "ADMIN" && (
+              <Link to="/products" className="hover:text-green-500 transition">
+                Product
+              </Link>
+            )}
+            {/* <Link to="/products" className="hover:text-green-500 transition">
               Product
-            </Link>
+            </Link> */}
             {role === "USER" ? (
               <>
                 <Link to="/orders" className="hover:text-green-500 transition">

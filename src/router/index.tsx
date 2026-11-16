@@ -19,6 +19,7 @@ import AdminOrders from "../pages/adminOrders";
 import Suppliers from "../pages/suppliers";
 import Stock from "../pages/stock";
 import ManagementCenter from "../pages/managementCenter";
+import ForgotPassword from "../pages/forgotPassword";
 
 const AppRouter = () => {
   return (
@@ -27,10 +28,12 @@ const AppRouter = () => {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/plants" element={<Plant />} />
         <Route path="/plantType" element={<PlantType />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/my-orders" element={<MyOrders />} />
+        <Route path="/products" element={<Products />} />
         <Route path="/admin/products" element={<Products />} />
         <Route path="/admin/orders" element={<AdminOrders />} />
         <Route path="/admin/suppliers" element={<Suppliers />} />
@@ -38,6 +41,7 @@ const AppRouter = () => {
         <Route path="/admin/management-center" element={<ManagementCenter />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/super-admin" element={<SuperAdmin />} />
+        <Route path="/home" element={<Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

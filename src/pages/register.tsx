@@ -224,7 +224,7 @@ const Register = () => {
 
           <div className="text-center mt-4">
             <Link
-              to="/home"
+              to="/"
               className="text-sm text-gray-500 hover:text-green-600 transition"
             >
               ← Back to Home

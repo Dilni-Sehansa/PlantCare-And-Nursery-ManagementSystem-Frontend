@@ -43,7 +43,7 @@ const Login = () => {
       } else if (role === "ADMIN") {
         navigate("/admin", { replace: true });
       } else {
-        navigate("/home", { replace: true });
+        navigate("/", { replace: true });
       }
 
     } catch (error) {
