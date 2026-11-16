@@ -50,10 +50,10 @@ const Register = () => {
       return;
     }
 
-    if (!acceptedTerms) {
-      alert("Please Accept the Terms & Conditions.");
-      return;
-    }
+    // if (!acceptedTerms) {
+    //   alert("Please Accept the Terms & Conditions.");
+    //   return;
+    // }
 
     try{
       await register(firstName.trim(),lastName.trim(),email.trim(),phone.trim(),password);
@@ -188,21 +188,6 @@ const Register = () => {
               </div>
             </div>
 
-            <div className="flex items-start gap-2">
-              <input
-                type="checkbox"
-                id="terms"
-                className="mt-1 w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                checked={acceptedTerms}
-                onChange={(e) => setAcceptedTerms(e.target.checked)}
-              />
-              <label htmlFor="terms" className="text-sm text-gray-600">
-                I agree to the{" "}
-                <span className="text-green-700 font-medium cursor-pointer hover:underline">
-                  Terms & Conditions
-                </span>
-              </label>
-            </div>
 
             <button
               type="submit"
