@@ -7,20 +7,36 @@ import OrderImage from "./OrderImage";
 import { getUserRole } from "../../hooks/useAuth";
 import {
   cancelOrder,
+  confirmOrderReceived,
   deleteOrder,
+  downloadOrderPdf,
   getOrderCatalog,
   getOrders,
   updateOrderStatus,
+  getBankTransferSlip,
+  verifyBankTransfer,
+  confirmCODPayment,
+  confirmCashAtNurseryPayment,
 } from "../../data/orders";
 import type {
   CatalogItem,
   OrderItemRecord,
   OrderRecord,
   OrderStatus,
+  PaymentStatus,
 } from "../../data/orders";
 
-const STATUSES: OrderStatus[] = ["PENDING", "CONFIRMED", "DELIVERED", "CANCELLED"];
+const STATUSES: OrderStatus[] = ["PENDING", "PROCESSING","DELIVERED","CONFIRMED", "CANCELLED"];
 const formatPrice = (price: number) => `Rs. ${Number(price).toLocaleString()}`;
+
+
+const paymentStatusClass: Record<string, string> = {
+  PENDING: "bg-yellow-50 text-yellow-800 ring-yellow-200",
+  PAID: "bg-green-50 text-green-700 ring-green-200",
+  FAILED: "bg-red-50 text-red-700 ring-red-200",
+  REJECTED: "bg-red-50 text-red-700 ring-red-200",
+  CANCELLED: "bg-gray-50 text-gray-700 ring-gray-200",
+};
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (axios.isAxiosError(error)) {
@@ -29,8 +45,9 @@ const getErrorMessage = (error: unknown, fallback: string) => {
   return fallback;
 };
 
-const statusClass: Record<OrderStatus, string> = {
+const statusClass: Record<string, string> = {
   PENDING: "bg-yellow-50 text-yellow-800 ring-yellow-200",
+  PROCESSING: "bg-blue-50 text-blue-800 ring-blue-200",
   CONFIRMED: "bg-green-50 text-green-700 ring-green-200",
   DELIVERED: "bg-green-100 text-green-800 ring-green-300",
   CANCELLED: "bg-red-50 text-red-700 ring-red-200",
@@ -116,6 +133,20 @@ const OrderHistory = ({ adminMode = false }: { adminMode?: boolean }) => {
 
   const refreshOrders = () => setReloadKey((key) => key + 1);
 
+  const handleDownload = async (orderId: string) => {
+    try {
+      setProcessingId(`pdf-${orderId}`);
+      setError("");
+      setMessage("");
+      await downloadOrderPdf(orderId);
+      setMessage(`Order ${orderId} PDF downloaded successfully.`);
+    } catch (downloadError) {
+      setError(getErrorMessage(downloadError, "Could not download this receipt."));
+    } finally {
+      setProcessingId("");
+    }
+  };
+
   const handleCancel = async (order: OrderRecord) => {
     if (!window.confirm(`Cancel order ${order.orderId}?`)) return;
     try {
@@ -154,11 +185,23 @@ const OrderHistory = ({ adminMode = false }: { adminMode?: boolean }) => {
   ) => {
     const status = event.target.value as OrderStatus;
     if (status === order.status) return;
+
+    const isValidTransition =
+      (order.status === "PENDING" && status === "PROCESSING") ||
+      (order.status === "PROCESSING" && status === "DELIVERED");
+
+      if (!isValidTransition) {
+      setError("Invalid order status transition.");
+      return;
+    }
+
     try {
       setProcessingId(order.orderId);
       setError("");
       setMessage("");
+
       const response = await updateOrderStatus(order.orderId, status);
+
       setMessage(response.message || `Order ${order.orderId} status was updated.`);
       refreshOrders();
     } catch (actionError) {
@@ -168,8 +211,188 @@ const OrderHistory = ({ adminMode = false }: { adminMode?: boolean }) => {
       setProcessingId("");
     }
   };
+  
+  
+  const handleConfirmReceived = async (order: OrderRecord) => {
+    if (
+      !window.confirm(`Have you received order ${order.orderId}?`
+    )
+  ) {
+    return;
+  }
+
+  try {
+    setProcessingId(order.orderId);
+    setError("");
+    setMessage("");
+
+    const response = await confirmOrderReceived(order.orderId);
+
+    setMessage(
+      response.message ||
+        `Order ${order.orderId} receipt confirmed successfully.`
+    );
+
+    refreshOrders();
+  } catch (actionError) {
+    setError(
+      getErrorMessage(
+        actionError,
+        "Could not confirm order receipt."
+      )
+    );
+  } finally {
+    setProcessingId("");
+  }
+};
+
+const handleViewBankSlip = async (order: OrderRecord) => {
+
+  const slipWindow = window.open("about:blank", "_blank");
+
+    try {
+      setProcessingId(`slip-${order.orderId}`);
+      setError("");
+      setMessage("");
+
+      const slipUrl = await getBankTransferSlip(order.orderId);
+
+      if (!slipUrl) {
+        throw new Error("Payment slip URL was not returned.");
+      }
+
+      if (slipWindow) {
+        slipWindow.location.href = slipUrl;
+      } else {
+        window.location.href = slipUrl;
+      }
+    } catch (actionError) {
+      slipWindow?.close();
+
+      setError(
+        getErrorMessage(
+          actionError,
+          "Could not open the bank transfer slip."
+        )
+      );
+    } finally {
+      setProcessingId("");
+    }
+  };
+
+  const handleVerifyBankTransfer = async (
+    order: OrderRecord,
+    approved: boolean
+  ) => {
+    const action = approved ? "approve" : "reject";
+
+    if (
+      !window.confirm(
+        `${approved ? "Approve" : "Reject"} bank transfer payment for ${order.orderId}?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setProcessingId(order.orderId);
+      setError("");
+      setMessage("");
+
+      const response = await verifyBankTransfer(
+        order.orderId,
+        approved
+      );
+
+      setMessage(
+        response.message ||
+          `Bank transfer payment ${approved ? "approved" : "rejected"}.`
+      );
+
+      refreshOrders();
+    } catch (actionError) {
+      setError(
+        getErrorMessage(
+          actionError,
+          `Could not ${action} bank transfer payment.`
+        )
+      );
+    } finally {
+      setProcessingId("");
+    }
+  };
+
+  const handleConfirmCOD = async (order: OrderRecord) => {
+    if (
+      !window.confirm(
+        `Confirm that COD payment for ${order.orderId} has been received?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setProcessingId(order.orderId);
+      setError("");
+      setMessage("");
+
+      const response = await confirmCODPayment(order.orderId);
+
+      setMessage(
+        response.message || "COD payment confirmed successfully."
+      );
+
+      refreshOrders();
+    } catch (actionError) {
+      setError(
+        getErrorMessage(
+          actionError,
+          "Could not confirm COD payment."
+        )
+      );
+    } finally {
+      setProcessingId("");
+    }
+  };
+
+  const handleConfirmCashAtNursery = async (order: OrderRecord) => {
+    if (
+      !window.confirm(
+        `Confirm that Cash at Nursery payment for ${order.orderId} has been received?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setProcessingId(order.orderId);
+      setError("");
+      setMessage("");
+
+      const response = await confirmCashAtNurseryPayment(
+        order.orderId
+      );
+
+      setMessage(
+        response.message ||
+          "Cash at Nursery payment confirmed successfully."
+      );
+
+      refreshOrders();
+    } catch (actionError) {
+      setError(
+        getErrorMessage(
+          actionError,
+          "Could not confirm Cash at Nursery payment."
+        )
+      );
+    } finally {
+      setProcessingId("");
+    }
+  };
 
   if (!role || (adminMode && role !== "ADMIN" && role !== "SUPER_ADMIN")) {
+
     return (
       <div className="min-h-screen bg-green-50">
         <Navbar />
@@ -239,8 +462,20 @@ const OrderHistory = ({ adminMode = false }: { adminMode?: boolean }) => {
               const isExpanded = expandedOrder === order.orderId;
               const itemCount = order.items.reduce((total, item) => total + item.quantity, 0);
               const customer = typeof order.user === "object" ? order.user : undefined;
-              const canCancel = order.status !== "CANCELLED" && order.status !== "DELIVERED";
+              const canCancel = !adminMode && order.status !== "CANCELLED" && order.status !== "DELIVERED";
               const canDelete = adminMode && order.status === "CANCELLED";
+              const canConfirmReceived = !adminMode && order.status === "DELIVERED";
+              const paymentMethod = order.paymentMethod;
+              const paymentStatus: PaymentStatus = order.paymentStatus || "PENDING";
+              const isPendingPayment = paymentStatus === "PENDING";
+              const canAdminUpdateStatus = adminMode &&(order.status === "PENDING" || order.status === "PROCESSING");
+              const nextAdminStatuses: OrderStatus[] =
+                order.status === "PENDING"
+                  ? ["PENDING", "PROCESSING"]
+                  : order.status === "PROCESSING"
+                    ? ["PROCESSING", "DELIVERED"]
+                    : [];
+
 
               return (
                 <article key={order._id} className="overflow-hidden rounded-2xl border border-green-100 bg-white shadow-lg transition duration-200 hover:border-green-300 hover:shadow-xl">
@@ -252,6 +487,9 @@ const OrderHistory = ({ adminMode = false }: { adminMode?: boolean }) => {
                           <div className="flex flex-wrap items-center gap-3">
                             <h2 className="text-xl font-bold text-gray-800">{order.orderId}</h2>
                             <span className={`rounded-full px-3 py-1 text-xs font-bold ring-1 ${statusClass[order.status]}`}>{order.status}</span>
+                            <span className={`rounded-full px-3 py-1 text-xs font-bold ring-1 ${paymentStatusClass[order.paymentStatus || "PENDING"]}`}>
+                              {order.paymentStatus || "PENDING"}
+                            </span>
                           </div>
                           <p className="mt-1 text-sm text-gray-600">{new Date(order.createdAt).toLocaleString()} · {order.items.length} different item{order.items.length === 1 ? "" : "s"} · {itemCount} total quantity</p>
                           {adminMode && customer && (
@@ -273,14 +511,29 @@ const OrderHistory = ({ adminMode = false }: { adminMode?: boolean }) => {
                           <p className="text-xs font-semibold uppercase tracking-wide text-green-700">Order total</p>
                           <p className="mt-1 text-xl font-bold text-green-800">{formatPrice(order.totalAmount)}</p>
                         </div>
-                        {adminMode && order.status !== "CANCELLED" && order.status !== "DELIVERED" && (
-                          <label className="sr-only" htmlFor={`status-${order._id}`}>Update status for {order.orderId}</label>
-                        )}
-                        {adminMode && order.status !== "CANCELLED" && order.status !== "DELIVERED" && (
-                          <select id={`status-${order._id}`} value={order.status} disabled={processingId === order.orderId} onChange={(event) => handleStatusChange(order, event)} className="rounded-xl border border-green-200 bg-white px-3 py-3 text-sm font-semibold text-green-700 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-200 disabled:opacity-50">
-                            {STATUSES.filter((status) => status !== "CANCELLED").map((status) => <option key={status} value={status}>{status}</option>)}
-                          </select>
-                        )}
+
+                        {canAdminUpdateStatus && (
+                          <>
+                          <label className="sr-only" htmlFor={`status-${order._id}`}>
+                            Update status for {order.orderId}
+                          </label>
+                          
+                          <select
+                          id={`status-${order._id}`}
+                          value={order.status}
+                          disabled={processingId === order.orderId}
+                          onChange={(event) => handleStatusChange(order, event)}
+                          className="rounded-xl border border-green-200 bg-white px-3 py-3 text-sm font-semibold text-green-700 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-200 disabled:opacity-50">
+                            {nextAdminStatuses.map((status) => (
+                              <option key={status} value={status}>
+                                {status}
+                                </option>))}
+                                </select>
+                                </>
+                              )}
+                        <button type="button" onClick={() => handleDownload(order.orderId)} disabled={processingId === `pdf-${order.orderId}`} className="rounded-full border border-green-200 px-4 py-3 text-sm font-semibold text-green-700 transition hover:bg-green-50 disabled:opacity-50">
+                          {processingId === `pdf-${order.orderId}` ? "Preparing PDF..." : "Download PDF"}
+                        </button>
                         {canCancel && (
                           <button type="button" onClick={() => handleCancel(order)} disabled={processingId === order.orderId} className="rounded-full border border-red-200 px-4 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-50">
                             {processingId === order.orderId ? "Working..." : "Cancel order"}
@@ -289,8 +542,163 @@ const OrderHistory = ({ adminMode = false }: { adminMode?: boolean }) => {
                         {canDelete && (
                           <button type="button" onClick={() => handleDelete(order)} disabled={processingId === order.orderId} className="rounded-full border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:opacity-50">Delete</button>
                         )}
+                        {canConfirmReceived && (
+                          <button
+                            type="button"
+                            onClick={() => handleConfirmReceived(order)}
+                            disabled={processingId === order.orderId}
+                            className="rounded-full bg-green-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-green-800 disabled:opacity-50"
+                          >
+                            {processingId === order.orderId
+                              ? "Confirming..."
+                              : "Confirm Order Received"}
+                          </button>
+                        )}
                       </div>
                     </div>
+
+                    {adminMode && (
+                      <div className="mt-5 rounded-2xl border border-green-100 bg-green-50 p-5">
+                        <h3 className="font-bold text-gray-800">
+                          Payment management
+                        </h3>
+
+                        <div className="mt-2 space-y-1 text-sm text-gray-600">
+                          <p>
+                            Payment method:{" "}
+                            <span className="font-semibold text-gray-800">
+                              {paymentMethod === "CARD"
+                                ? "Demo Card Payment"
+                                : paymentMethod || "Not selected"}
+                            </span>
+                          </p>
+
+                          <p>
+                            Payment status:{" "}
+                            <span className="font-semibold text-gray-800">
+                              {paymentStatus}
+                            </span>
+                          </p>
+                        </div>
+
+                        {isPendingPayment &&
+                          paymentMethod === "BANK_TRANSFER" && (
+                            <div className="mt-4 flex flex-wrap gap-3">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleViewBankSlip(order)
+                                }
+                                disabled={
+                                  processingId ===
+                                  `slip-${order.orderId}`
+                                }
+                                className="rounded-full border border-blue-200 bg-white px-5 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-50 disabled:opacity-50"
+                              >
+                                {processingId ===
+                                `slip-${order.orderId}`
+                                  ? "Opening..."
+                                  : "View Bank Slip"}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleVerifyBankTransfer(order, true)
+                                }
+                                disabled={
+                                  processingId === order.orderId
+                                }
+                                className="rounded-full bg-green-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-800 disabled:opacity-50"
+                              >
+                                Approve Payment
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleVerifyBankTransfer(order, false)
+                                }
+                                disabled={
+                                  processingId === order.orderId
+                                }
+                                className="rounded-full border border-red-200 bg-white px-5 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-50"
+                              >
+                                Reject Payment
+                              </button>
+                            </div>
+                          )}
+
+                        {isPendingPayment &&
+                          paymentMethod === "COD" && (
+                            <button
+                              type="button"
+                              onClick={() => handleConfirmCOD(order)}
+                              disabled={
+                                processingId === order.orderId
+                              }
+                              className="mt-4 rounded-full bg-green-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-800 disabled:opacity-50"
+                            >
+                              Confirm COD Payment Received
+                            </button>
+                          )}
+
+                        {isPendingPayment &&
+                          paymentMethod === "CASH_AT_NURSERY" && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleConfirmCashAtNursery(order)
+                              }
+                              disabled={
+                                processingId === order.orderId
+                              }
+                              className="mt-4 rounded-full bg-green-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-800 disabled:opacity-50"
+                            >
+                              Confirm Cash Received
+                            </button>
+                          )}
+
+                        {paymentMethod === "CARD" && (
+                          <p className="mt-4 text-sm text-gray-600">
+                            Demo card payments are not verified and never
+                            change the payment status. No actual payment is
+                            collected.
+                          </p>
+                        )}
+
+                        {paymentStatus === "PAID" && (
+                          <p className="mt-4 text-sm font-semibold text-green-700">
+                            Payment has been confirmed.
+                          </p>
+                        )}
+
+                        {paymentStatus === "REJECTED" && (
+                          <p className="mt-4 text-sm font-semibold text-red-700">
+                            Bank transfer payment was rejected.
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {!adminMode && paymentMethod === "CARD" && (
+                      <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                        <p>
+                          Demo card payment only. No actual payment is collected
+                          and the order remains unpaid until payment is confirmed
+                          through a supported method.
+                        </p>
+                        {order.paymentStatus !== "PAID" &&
+                          order.status !== "CANCELLED" && (
+                            <Link
+                              to={`/demo-payment/${encodeURIComponent(order.orderId)}`}
+                              className="mt-3 inline-block font-semibold text-green-800 underline"
+                            >
+                              Open demo payment
+                            </Link>
+                          )}
+                      </div>
+                    )}
 
                     <button type="button" aria-expanded={isExpanded} onClick={() => setExpandedOrder(isExpanded ? "" : order.orderId)} className="mt-5 flex w-full items-center justify-between border-t border-green-100 pt-4 text-left text-sm font-semibold text-green-700 transition hover:text-green-800">
                       <span>{isExpanded ? "Hide order details" : "View order details"}</span>

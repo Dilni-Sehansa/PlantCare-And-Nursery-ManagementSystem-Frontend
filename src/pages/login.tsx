@@ -174,7 +174,6 @@ const Login = () => {
               type="submit"
               disabled={loading}
               className="w-full bg-green-700 hover:bg-green-800 text-white font-semibold py-3.5 rounded-xl shadow-md transition hover:scale-[1.02] active:scale-[0.98]"
-            //   onClick={handleLogin}
             >
               {loading ? "Logging in..." : "Login"}
             </button>

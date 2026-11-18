@@ -16,7 +16,6 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -50,10 +49,10 @@ const Register = () => {
       return;
     }
 
-    // if (!acceptedTerms) {
-    //   alert("Please Accept the Terms & Conditions.");
-    //   return;
-    // }
+    if (password !== confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
 
     try{
       await register(firstName.trim(),lastName.trim(),email.trim(),phone.trim(),password);

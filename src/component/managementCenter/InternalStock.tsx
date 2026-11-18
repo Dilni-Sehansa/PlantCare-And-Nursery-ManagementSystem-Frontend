@@ -78,7 +78,7 @@ const InternalStock = () => {
     return () => {
       active = false;
     };
-  }, [reloadKey, search]);
+  }, [reloadKey, search, supplierId]);
 
   const reset = () => {
     setForm(emptyForm);

@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Navbar from "../component/common/Navbar";
 import OrderImage from "../component/order/OrderImage";
 import { getUserRole } from "../hooks/useAuth";
-import { createOrder, getOrderCatalog } from "../data/orders";
-import type { CatalogItem, OrderRecord } from "../data/orders";
+import { createOrder, getOrderCatalog, getOrders, uploadBankTransferSlip, selectOfflinePayment, } from "../data/orders";
+import type { CatalogItem, OrderRecord, PaymentMethod, } from "../data/orders";
 
 
 const formatPrice = (price: number) => `Rs. ${price.toLocaleString()}`;
+const PAYMENT_SLIP_TYPES = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
+const MAX_PAYMENT_SLIP_SIZE = 5 * 1024 * 1024;
+const UNRESOLVED_ORDER_STORAGE_KEY = "plantcare-unresolved-payment-order";
 
 const getErrorMessage = (error: unknown, fallback: string) => {
 
@@ -17,12 +20,13 @@ const getErrorMessage = (error: unknown, fallback: string) => {
     return error.response?.data?.message || fallback;
   }
 
-  return fallback;
+  return error instanceof Error ? error.message : fallback
 };
 
 
 
 const Orders = () => {
+  const navigate = useNavigate();
   const role = getUserRole();
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [cart, setCart] = useState<{ item: CatalogItem; quantity: number }[]>([]);
@@ -35,7 +39,34 @@ const Orders = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState<OrderRecord | null>(null);
+  const [orderResolutionRequired, setOrderResolutionRequired] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("COD");
+  const [paymentSlip, setPaymentSlip] = useState<File | null>(null);
+
+  const handlePaymentSlipChange = (file: File | undefined, input: HTMLInputElement) => {
+    setError("");
+    if (!file) {
+      setPaymentSlip(null);
+      return;
+    }
+
+    if (!PAYMENT_SLIP_TYPES.includes(file.type)) {
+      setPaymentSlip(null);
+      input.value = "";
+      setError("Choose a JPG, PNG, or PDF bank transfer slip.");
+      return;
+    }
+
+    if (file.size > MAX_PAYMENT_SLIP_SIZE) {
+      setPaymentSlip(null);
+      input.value = "";
+      setError("The bank transfer slip must be 5 MB or smaller.");
+      return;
+    }
+
+    setPaymentSlip(file);
+  };
 
   useEffect(() => {
     const loadCatalog = async () => {
@@ -123,6 +154,35 @@ const Orders = () => {
     event.preventDefault();
     setError("");
 
+    const unresolvedOrderId = sessionStorage.getItem(UNRESOLVED_ORDER_STORAGE_KEY);
+    if (unresolvedOrderId) {
+      setSubmitting(true);
+      try {
+        const existingOrders = await getOrders();
+        const unresolvedOrder = existingOrders.find(
+          (existing) => existing.orderId === unresolvedOrderId
+        );
+        if (unresolvedOrder && unresolvedOrder.status !== "CANCELLED") {
+          setOrderResolutionRequired(true);
+          setError(
+            `Order ${unresolvedOrderId} is still active. Cancel it from My Orders before placing another order.`
+          );
+          return;
+        }
+
+        sessionStorage.removeItem(UNRESOLVED_ORDER_STORAGE_KEY);
+        setOrderResolutionRequired(false);
+      } catch (resolutionError) {
+        setOrderResolutionRequired(true);
+        setError(
+          `Could not confirm whether order ${unresolvedOrderId} was cancelled. Retry this check before placing another order: ${getErrorMessage(resolutionError, "order status unavailable")}`
+        );
+        return;
+      } finally {
+        setSubmitting(false);
+      }
+    }
+
     if (!cart.length) {
       setError("Add at least one plant or product to your order.");
       return;
@@ -138,6 +198,22 @@ const Orders = () => {
       return;
     }
 
+    if (paymentMethod === "BANK_TRANSFER" && !paymentSlip) {
+      setError("Please upload your bank transfer slip.");
+      return;
+    }
+
+    if (
+      paymentMethod === "BANK_TRANSFER" &&
+      paymentSlip &&
+      (!PAYMENT_SLIP_TYPES.includes(paymentSlip.type) ||
+        paymentSlip.size > MAX_PAYMENT_SLIP_SIZE)
+    ) {
+      setError("Choose a JPG, PNG, or PDF bank transfer slip no larger than 5 MB.");
+      return;
+    }
+
+    let createdOrder: OrderRecord | null = null;
     try {
       setSubmitting(true);
       const order = await createOrder({
@@ -151,19 +227,58 @@ const Orders = () => {
 
         shippingAddress: shippingAddress.trim(),
         notes: notes.trim(),
+        paymentMethod,
       });
+      createdOrder = order;
+
+      if (paymentMethod === "CARD") {
+        setCart([]);
+        setShippingAddress("");
+        setNotes("");
+        navigate(`/demo-payment/${encodeURIComponent(order.orderId)}`);
+        return;
+      }
+
+      if (paymentMethod === "BANK_TRANSFER" && paymentSlip) {
+        await uploadBankTransferSlip(
+          order.orderId,
+          paymentSlip
+        );
+      }
+
+      if (paymentMethod === "COD" || paymentMethod === "CASH_AT_NURSERY") {
+        await selectOfflinePayment(order.orderId, paymentMethod);
+      }
 
       setSuccess(order);
       setCart([]);
       setShippingAddress("");
       setNotes("");
+      setPaymentSlip(null);
       setReloadKey((key) => key + 1);
     } catch (submitError) {
       console.error("Error placing order:", submitError);
-      setError(getErrorMessage(submitError, "Your order could not be placed."));
-    } finally {
-      setSubmitting(false);
-    }
+
+      if (createdOrder) {
+
+        sessionStorage.setItem(
+          UNRESOLVED_ORDER_STORAGE_KEY,
+          createdOrder.orderId
+        );
+
+        setOrderResolutionRequired(true);
+
+        setError(
+            `${getErrorMessage(submitError, "Payment setup failed.")} Order ${createdOrder.orderId} was created and remains pending. Check My Orders before trying again.`
+          );
+        
+        } else {
+          setError(getErrorMessage(submitError, "Your order could not be placed."));
+        }
+      
+      } finally {
+        setSubmitting(false);
+      }
   };
 
   if (!role) {
@@ -392,12 +507,99 @@ const Orders = () => {
                     className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition focus:border-green-500 focus:bg-white focus:ring-2 focus:ring-green-200"
                   />
 
+                  <div>
+                    <h3 className="font-bold text-gray-800">Payment method</h3>
+
+                    <div className="mt-3 space-y-3">
+                      <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 p-3 hover:border-green-500">
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="CARD"
+                          checked={paymentMethod === "CARD"}
+                          onChange={() => setPaymentMethod("CARD")}
+                          className="accent-green-700"
+                        />
+                        <span className="text-sm font-medium text-gray-700">
+                          💳 Demo Card Payment (no real charge)
+                        </span>
+                      </label>
+
+                      <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 p-3 hover:border-green-500">
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="BANK_TRANSFER"
+                          checked={paymentMethod === "BANK_TRANSFER"}
+                          onChange={() => setPaymentMethod("BANK_TRANSFER")}
+                          className="accent-green-700"
+                        />
+                        <span className="text-sm font-medium text-gray-700">
+                          🏦 Bank Transfer
+                        </span>
+                      </label>
+
+                      <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 p-3 hover:border-green-500">
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="COD"
+                          checked={paymentMethod === "COD"}
+                          onChange={() => setPaymentMethod("COD")}
+                          className="accent-green-700"
+                        />
+                        <span className="text-sm font-medium text-gray-700">
+                          📦 Cash on Delivery
+                        </span>
+                      </label>
+
+                       <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 p-3 hover:border-green-500">
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="CASH_AT_NURSERY"
+                          checked={paymentMethod === "CASH_AT_NURSERY"}
+                          onChange={() => setPaymentMethod("CASH_AT_NURSERY")}
+                          className="accent-green-700"
+                        />
+                        <span className="text-sm font-medium text-gray-700">
+                          🏪 Cash at Nursery
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {paymentMethod === "BANK_TRANSFER" && (
+                    <div>
+                      <label
+                        className="mb-2 block text-sm font-medium text-gray-700"
+                        htmlFor="payment-slip"
+                      >
+                        Upload bank transfer slip{" "}
+                        <span className="text-red-500">*</span>
+                      </label>
+
+                      <input
+                        id="payment-slip"
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/jpg,image/png,application/pdf"
+                        required
+                        onChange={(event) => handlePaymentSlipChange(event.target.files?.[0], event.currentTarget)}
+                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-sm"
+                      />
+
+                      <p className="mt-1 text-xs text-gray-500">
+                        Upload a JPG, PNG, or PDF of your bank transfer receipt (maximum 5 MB).
+                      </p>
+                    </div>
+                  )}
+
                   <button
                     type="submit"
                     disabled={submitting || cart.length === 0}
                     className="w-full rounded-xl bg-green-700 px-5 py-4 font-bold text-white shadow-md transition hover:bg-green-800 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-gray-300"
                   >
-                    {submitting ? "Placing your order..." : "Place order"}
+                    {submitting ? "Placing your order..." : orderResolutionRequired ? "Check previous order before retry" : paymentMethod === "CARD" ? "Continue to Card payment" : "Place order"}
                   </button>
                   <Link to="/my-orders" className="block text-center text-sm font-semibold text-green-700 hover:text-green-800">View your previous orders →</Link>
                 </form>

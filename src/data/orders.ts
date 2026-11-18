@@ -5,7 +5,10 @@ import { getProducts } from "./product";
 import type { ProductItem } from "./product";
 
 export type OrderItemType = "PLANT" | "PRODUCT";
-export type OrderStatus = "PENDING" | "CONFIRMED" | "DELIVERED" | "CANCELLED";
+export type OrderStatus = "PENDING" | "PROCESSING" | "CONFIRMED" | "DELIVERED" | "CANCELLED";
+
+export type PaymentMethod = "CARD" | "BANK_TRANSFER" | "COD" | "CASH_AT_NURSERY";
+export type PaymentStatus = "PENDING" | "PAID" | "FAILED" | "CANCELLED" | "REJECTED";
 
 export interface CatalogItem {
   key: string;
@@ -42,6 +45,13 @@ export interface OrderRecord {
   shippingAddress: string;
   notes?: string;
   createdAt: string;
+  paymentMethod?: PaymentMethod;
+  paymentStatus?: PaymentStatus;
+  paymentSlipUrl?: string;
+  paymentReference?: string;
+  paymentDate?: string;
+  verifiedBy?: string;
+  verifiedAt?: string; 
   user?: string | {
     _id?: string;
     firstName?: string;
@@ -60,6 +70,7 @@ export interface CreateOrderPayload {
   }[];
   shippingAddress: string;
   notes: string;
+  paymentMethod: PaymentMethod;
 }
 
 export const getOrderCatalog = async (): Promise<CatalogItem[]> => {
@@ -68,7 +79,7 @@ export const getOrderCatalog = async (): Promise<CatalogItem[]> => {
   let totalPages = 1;
 
   while (page <= totalPages) {
-    const result = await getPlants({ page, limit: 100 });
+    const result = await getPlants({ page, limit: 100, upcomingOnly: false }); 
     allPlants.push(...result.plants);
     totalPages = result.meta.totalPages;
     page += 1;
@@ -107,6 +118,23 @@ export const createOrder = async (payload: CreateOrderPayload) => {
   return response.data.data as OrderRecord;
 };
 
+export const downloadOrderPdf = async (orderId: string) => {
+  const response = await api.get(`/orders/${encodeURIComponent(orderId)}/pdf`, {
+    responseType: "blob",
+  });
+
+  const blob = new Blob([response.data], { type: "application/pdf" });
+  const fileUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = fileUrl;
+  link.download = `nurix-order-${orderId}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(fileUrl);
+};
+
 export const getOrders = async (): Promise<OrderRecord[]> => {
   const orders: OrderRecord[] = [];
   let page = 1;
@@ -124,6 +152,11 @@ export const getOrders = async (): Promise<OrderRecord[]> => {
   return orders;
 };
 
+export const getOrderById = async (orderId: string): Promise<OrderRecord> => {
+  const response = await api.get(`/orders/${encodeURIComponent(orderId)}`);
+  return response.data.data as OrderRecord;
+};
+
 export const cancelOrder = async (id: string) => {
   const response = await api.patch(`/orders/${encodeURIComponent(id)}/cancel`);
   return response.data;
@@ -138,5 +171,64 @@ export const updateOrderStatus = async (id: string, status: OrderStatus) => {
 
 export const deleteOrder = async (id: string) => {
   const response = await api.delete(`/orders/${encodeURIComponent(id)}`);
+  return response.data;
+};
+
+export const uploadBankTransferSlip = async (orderId: string,paymentSlip: File) => {
+  const formData = new FormData();
+  formData.append("paymentSlip", paymentSlip);
+
+  const response = await api.post(
+    `/payments/bank-transfer/${encodeURIComponent(orderId)}`,
+    formData
+  );
+
+  return response.data;
+};
+
+export const selectOfflinePayment = async (orderId: string,method: "COD" | "CASH_AT_NURSERY") => {
+  const response = await api.post(
+    `/payments/${encodeURIComponent(orderId)}/offline-method`,
+    {
+      paymentMethod: method,
+    }
+  );
+
+  return response.data;
+};
+
+export const getBankTransferSlip = async (orderId: string): Promise<string> => {
+  const response = await api.get(
+    `/payments/bank-transfer/${encodeURIComponent(orderId)}/slip`
+  );
+  return response.data.slipUrl as string;
+};
+
+export const verifyBankTransfer = async (orderId: string,approved: boolean) => {
+  const response = await api.patch(
+    `/payments/bank-transfer/${encodeURIComponent(orderId)}/verify`,
+    { approved }
+  );
+  return response.data;
+};
+
+export const confirmCODPayment = async (orderId: string) => {
+  const response = await api.patch(
+    `/payments/cod/${encodeURIComponent(orderId)}/confirm`
+  );
+  return response.data;
+};
+
+export const confirmCashAtNurseryPayment = async (orderId: string) => {
+  const response = await api.patch(
+    `/payments/cash-at-nursery/${encodeURIComponent(orderId)}/confirm`
+  );
+  return response.data;
+};
+
+export const confirmOrderReceived = async (orderId: string) => {
+  const response = await api.patch(
+    `/orders/${encodeURIComponent(orderId)}/received`
+  );
   return response.data;
 };

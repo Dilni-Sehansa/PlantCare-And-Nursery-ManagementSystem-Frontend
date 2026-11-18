@@ -99,21 +99,15 @@ const PlantImage = ({ src, alt }: { src: string; alt: string }) => {
 };
 
 const Plant = () => {
+  const [currentTime, setCurrentTime] = useState<number | null>(null);
   const [plants, setPlants] = useState<PlantItem[]>([]);
   const [meta, setMeta] = useState<PlantMeta | null>(null);
   const [page, setPage] = useState(1);
-  const [categoryFilter, setCategoryFilter] = useState<Category | "All">("All");
   const [searchParams, setSearchParams] = useSearchParams();
   const categoryFromUrl = searchParams.get("category");
-  useEffect(() => {
-  if (CATEGORIES.includes(categoryFromUrl as Category)) {
-    setCategoryFilter(categoryFromUrl as Category);
-  } else {
-    setCategoryFilter("All");
-  }
-
-  setPage(1);
-}, [categoryFromUrl]);
+  const categoryFilter: Category | "All" = CATEGORIES.includes(categoryFromUrl as Category)
+    ? (categoryFromUrl as Category)
+    : "All";
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
@@ -135,6 +129,15 @@ const Plant = () => {
 
   const formRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const initialTimer = window.setTimeout(() => setCurrentTime(Date.now()), 0);
+    const refreshTimer = window.setInterval(() => setCurrentTime(Date.now()), 60_000);
+    return () => {
+      window.clearTimeout(initialTimer);
+      window.clearInterval(refreshTimer);
+    };
+  }, []);
 
   useEffect(() => {
     const loadPlants = async () => {
@@ -173,8 +176,11 @@ const Plant = () => {
   }, [searchInput]);
 
   useEffect(() => {
+    let active = true;
+    const timer = window.setTimeout(() => {
     if (!form.category) {
       setFormPlantTypes([]);
+      setLoadingTypes(false);
       return;
     }
 
@@ -182,29 +188,28 @@ const Plant = () => {
       try {
         setLoadingTypes(true);
         const data = await getPlantTypes(form.category as Category);
-        setFormPlantTypes(data);
+        if (active) setFormPlantTypes(data);
       } catch (error) {
         console.error("Error in Loading Plant Types:", error);
-        setFormPlantTypes([]);
+        if (active) setFormPlantTypes([]);
       } finally {
-        setLoadingTypes(false);
+        if (active) setLoadingTypes(false);
       }
     };
 
-    loadTypes();
+    void loadTypes();
+    }, 0);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
   }, [form.category]);
 
   useEffect(() => {
-    if (!imageFile) {
-      setPreviewUrl("");
-      return;
-    }
-
-    const url = URL.createObjectURL(imageFile);
-    setPreviewUrl(url);
-
-    return () => URL.revokeObjectURL(url);
-  }, [imageFile]);
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   const shownImage =
     previewUrl || (existingImage ? getImageUrl(existingImage) : "");
@@ -236,11 +241,13 @@ const Plant = () => {
 
     setFormError("");
     setImageFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
   };
 
   const resetForm = () => {
     setForm(emptyForm);
     setImageFile(null);
+    setPreviewUrl("");
     setExistingImage("");
     setEditingId("");
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -266,6 +273,7 @@ const Plant = () => {
         : "",
     });
     setImageFile(null);
+    setPreviewUrl("");
     setExistingImage(plant.image || "");
     if (fileInputRef.current) fileInputRef.current.value = "";
 
@@ -332,7 +340,6 @@ const Plant = () => {
     try {
       setSaving(true);
 
-      // Upload Plant images separately and save only the Supabase URL in the Plant document.
       if (imageFile) {
         const imageUrl = await uploadPlantImage(imageFile);
         formData.append("image", imageUrl);
@@ -386,7 +393,6 @@ const Plant = () => {
   };
 
   const handleFilterChange = (option: Category | "All") => {
-    setCategoryFilter(option);
     setPage(1);
     const nextParams = new URLSearchParams(searchParams);
     if (option === "All") {
@@ -862,12 +868,12 @@ const Plant = () => {
                         {plant.isUpcoming && plant.availableAt && (
                           <p
                             className={`mb-3 inline-flex w-fit rounded-full border px-3 py-1 text-xs font-semibold ${
-                              new Date(plant.availableAt).getTime() > Date.now()
+                              (currentTime === null || new Date(plant.availableAt).getTime() > currentTime)
                                 ? "border-amber-200 bg-amber-50 text-amber-700"
                                 : "border-green-200 bg-green-50 text-green-700"
                             }`}
                           >
-                            {new Date(plant.availableAt).getTime() > Date.now()
+                            {(currentTime === null || new Date(plant.availableAt).getTime() > currentTime)
                               ? `Coming soon · ${new Intl.DateTimeFormat("en-LK", {
                                   timeZone: "Asia/Colombo",
                                   dateStyle: "medium",

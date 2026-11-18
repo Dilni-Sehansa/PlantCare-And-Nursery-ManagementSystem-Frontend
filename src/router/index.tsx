@@ -1,10 +1,4 @@
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
-
+import { BrowserRouter,Routes,Route,Navigate,} from "react-router-dom";
 import Home from "../pages/home";
 import Login from "../pages/login";
 import Register from "../pages/register";
@@ -20,6 +14,7 @@ import Suppliers from "../pages/suppliers";
 import Stock from "../pages/stock";
 import ManagementCenter from "../pages/managementCenter";
 import ForgotPassword from "../pages/forgotPassword";
+import DemoPayment from "../pages/demoPayment";
 
 const AppRouter = () => {
   return (
@@ -33,6 +28,7 @@ const AppRouter = () => {
         <Route path="/plantType" element={<PlantType />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/my-orders" element={<MyOrders />} />
+        <Route path="/demo-payment/:orderId" element={<DemoPayment />} />
         <Route path="/products" element={<Products />} />
         <Route path="/admin/products" element={<Products />} />
         <Route path="/admin/orders" element={<AdminOrders />} />

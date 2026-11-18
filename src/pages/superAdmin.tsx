@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
@@ -164,7 +164,7 @@ const SuperAdminDashboard = () => {
     });
   }, [roleFilter, search, statusFilter, users]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       setStatsLoading(true);
       setStatsError("");
@@ -176,9 +176,9 @@ const SuperAdminDashboard = () => {
     } finally {
       setStatsLoading(false);
     }
-  };
+  }, []);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setUsersLoading(true);
       setUsersError("");
@@ -190,20 +190,23 @@ const SuperAdminDashboard = () => {
     } finally {
       setUsersLoading(false);
     }
-  };
+  }, []);
 
-  const refreshDashboard = async () => {
+  const refreshDashboard = useCallback(async () => {
     setRefreshing(true);
     try {
       await Promise.all([fetchStats(), fetchUsers()]);
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [fetchStats, fetchUsers]);
 
   useEffect(() => {
-    void refreshDashboard();
-  }, []);
+    const timer = window.setTimeout(() => {
+      void refreshDashboard();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [refreshDashboard]);
 
   const handleAdminFormChange = (
     event: ChangeEvent<HTMLInputElement>

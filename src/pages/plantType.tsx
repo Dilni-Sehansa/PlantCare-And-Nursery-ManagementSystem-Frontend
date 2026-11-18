@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import axios from "axios";
 import Navbar from "../component/common/Navbar";
@@ -18,7 +18,7 @@ const PlantType = () => {
   const [success, setSuccess] = useState("");
   const [listError, setListError] = useState("");
 
-  const loadPlantTypes = async () => {
+  const loadPlantTypes = useCallback(async () => {
     try {
       setLoadingList(true);
       setListError("");
@@ -42,11 +42,14 @@ const PlantType = () => {
     } finally {
       setLoadingList(false);
     }
-  };
+  }, [filter]);
 
   useEffect(() => {
-    loadPlantTypes();
-  }, [filter]);
+    const timer = window.setTimeout(() => {
+      void loadPlantTypes();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadPlantTypes]);
 
   const toggleCategory = (category: Category) => {
     if (selectedCategories.includes(category)) {
