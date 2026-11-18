@@ -19,3 +19,10 @@ export const refreshTokenCall = async (refreshToken: string) => {
   const res = await api.post("/auth/refresh-token", { refreshToken })
   return res.data
 }
+
+export const verifyEmail = async (token: string) => {
+  const res = await api.get("/auth/verify-email", {
+    params: { token }
+  });
+  return res.data;
+};

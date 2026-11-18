@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import logo from "../assets/img/logo.png";
 import React, { useState } from "react";
 import { register } from "../service/auth.ts";
@@ -7,7 +7,6 @@ import PasswordVisibilityToggle from "../component/common/PasswordVisibilityTogg
 
 const Register = () => {
 
-  const navigate = useNavigate()
   const [firstName, setFirstName] =useState("")
   const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
@@ -31,7 +30,6 @@ const Register = () => {
       return;
     }
     
-
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailPattern.test(email.trim())) {
       alert("Please Enter a Valid Email Address!");
@@ -56,10 +54,11 @@ const Register = () => {
 
     try{
       await register(firstName.trim(),lastName.trim(),email.trim(),phone.trim(),password);
-      navigate("/login")
-    }catch(error){
+      // navigate("/login")
+      alert("Registration Successful! Please check your email and verify your account before logging in.");
+    }catch(error: any){
       console.error("Error in Register", error)
-      alert("Registration Failed...")
+      alert(error?.response?.data?.message || "Registration Failed.Please try again.");
     }
   }
   return (

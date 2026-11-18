@@ -15,6 +15,7 @@ import Stock from "../pages/stock";
 import ManagementCenter from "../pages/managementCenter";
 import ForgotPassword from "../pages/forgotPassword";
 import DemoPayment from "../pages/demoPayment";
+import VerifyEmail from "../pages/verifyEmail";
 
 const AppRouter = () => {
   return (
@@ -39,6 +40,7 @@ const AppRouter = () => {
         <Route path="/super-admin" element={<SuperAdmin />} />
         <Route path="/home" element={<Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
       </Routes>
     </BrowserRouter>
   );
