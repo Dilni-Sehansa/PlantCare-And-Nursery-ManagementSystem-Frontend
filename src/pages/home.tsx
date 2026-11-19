@@ -244,10 +244,6 @@ const CountdownBox = ({
   );
 };
 
-/* -------------------------------------------------------------------------- */
-/*  Main Home                                                                 */
-/* -------------------------------------------------------------------------- */
-
 const Home = () => {
   const role = getUserRole();
   const [latestPlants, setLatestPlants] = useState<PlantItem[]>([]);
@@ -341,7 +337,9 @@ const Home = () => {
     };
   }, []);
 
-  const orderLink = role ? "/orders" : "/login";
+  // const orderLink = role ? "/orders" : "/login";
+  const orderLink = role ? "/shop" : "/login";
+  const productLink = "/products";
 
   return (
     <div className="min-h-screen bg-[#F8FAF5] text-[#1F2A22] antialiased">
@@ -349,7 +347,6 @@ const Home = () => {
 
       <main className="pt-16">
         <section className="relative isolate overflow-hidden">
-          {/* background image */}
           <div className="absolute inset-0">
             <img
               src={heroPlant}
@@ -389,7 +386,7 @@ const Home = () => {
                 </Link>
 
                 <Link
-                  to={orderLink}
+                  to={productLink}
                   className="inline-flex items-center gap-2 rounded-xl border-2 border-green-700/40 bg-white/90 px-7 py-3.5 text-sm font-semibold text-green-800 shadow-sm transition hover:border-green-700 hover:bg-white"
                 >
                   View Products
@@ -569,7 +566,7 @@ const Home = () => {
               </h2>
             </div>
             <Link
-              to={orderLink}
+              to={productLink}
               className="inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-white px-4 py-2 text-sm font-semibold text-green-800 shadow-sm transition hover:border-green-600 hover:bg-green-50"
             >
               See more

@@ -3,6 +3,7 @@ import type { ChangeEvent, FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import Navbar from "../component/common/Navbar";
+import { getUserRole } from "../hooks/useAuth";
 import { getPlantTypes } from "../data/plantType";
 import type { Category, PlantTypeItem } from "../data/plantType";
 import {
@@ -99,6 +100,8 @@ const PlantImage = ({ src, alt }: { src: string; alt: string }) => {
 };
 
 const Plant = () => {
+  const role = getUserRole();
+  const isAdmin = role === "ADMIN";
   const [currentTime, setCurrentTime] = useState<number | null>(null);
   const [plants, setPlants] = useState<PlantItem[]>([]);
   const [meta, setMeta] = useState<PlantMeta | null>(null);
@@ -176,6 +179,7 @@ const Plant = () => {
   }, [searchInput]);
 
   useEffect(() => {
+    if (!isAdmin) return;
     let active = true;
     const timer = window.setTimeout(() => {
     if (!form.category) {
@@ -196,9 +200,9 @@ const Plant = () => {
         if (active) setLoadingTypes(false);
       }
     };
-
     void loadTypes();
     }, 0);
+
     return () => {
       active = false;
       window.clearTimeout(timer);
@@ -229,6 +233,7 @@ const Plant = () => {
   };
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (!isAdmin) return;
     const file = e.target.files?.[0];
 
     if (!file) return;
@@ -237,7 +242,7 @@ const Plant = () => {
       setFormError("Please choose an image file.");
       e.target.value = "";
       return;
-    }
+    };
 
     setFormError("");
     setImageFile(file);
@@ -250,10 +255,13 @@ const Plant = () => {
     setPreviewUrl("");
     setExistingImage("");
     setEditingId("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (fileInputRef.current){
+      fileInputRef.current.value = "";
+    }
   };
-
+  
   const startEdit = (plant: PlantItem) => {
+    if (!isAdmin) return;
     setFormError("");
     setFormSuccess("");
     setEditingId(plant.plantId);
@@ -275,13 +283,18 @@ const Plant = () => {
     setImageFile(null);
     setPreviewUrl("");
     setExistingImage(plant.image || "");
-    if (fileInputRef.current) fileInputRef.current.value = "";
-
-    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (fileInputRef.current){
+      fileInputRef.current.value = "";
+    } 
+    formRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start" 
+    });
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!isAdmin) return;
     setFormError("");
     setFormSuccess("");
 
@@ -330,6 +343,7 @@ const Plant = () => {
     formData.append("stock", form.stock);
     formData.append("careTips", form.careTips.trim());
     formData.append("isUpcoming", String(form.isUpcoming));
+
     if (form.isUpcoming) {
       formData.append(
         "availableAt",
@@ -365,6 +379,7 @@ const Plant = () => {
   };
 
   const handleDelete = async (plant: PlantItem) => {
+    if (!isAdmin) return;
     if (!window.confirm(`Delete "${plant.name}"? This cannot be undone.`)) {
       return;
     }
@@ -413,27 +428,36 @@ const Plant = () => {
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="inline-flex items-center gap-2 bg-white/70 text-green-700 text-sm font-medium px-4 py-1.5 rounded-full mb-5 shadow-sm">
             <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-            Nursery Management
+            {/* Nursery Management */}
+            {isAdmin ? "Nursery Management" : "Explore Our Nursery"}
           </div>
 
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-800 leading-tight mb-4">
-            Manage your
+            {/* Manage your */}
+            {isAdmin ? "Manage your" : "Explore our"}
             <br />
             <span className="text-green-700">plants</span>
           </h1>
 
           <p className="text-gray-600 text-lg leading-relaxed mb-6 max-w-xl">
-            Add new plants with photos, keep track of price and stock, and
-            update your collection anytime.
+            {/* Add new plants with photos, keep track of price and stock, and
+            update your collection anytime. */}
+
+            {isAdmin
+              ? "Add new plants with photos, keep track of price and stock, and update your collection anytime."
+              : "Explore our plants, check their prices, and discover the right plants for your home and garden."}
           </p>
 
           <div className="flex flex-wrap items-center gap-3">
+
+            {isAdmin && (
             <Link
               to="/plantType"
               className="bg-green-700 hover:bg-green-800 text-white font-semibold text-sm px-6 py-3 rounded-full shadow-md transition hover:scale-105"
             >
               Manage Plant Types
             </Link>
+            )}
 
             {meta && !listError && (
               <span className="bg-white/70 text-green-700 text-sm font-medium px-4 py-3 rounded-full shadow-sm">
@@ -446,6 +470,7 @@ const Plant = () => {
 
       <main className="py-12 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 items-start">
+          {isAdmin && (
           <div
             ref={formRef}
             className="w-full lg:w-[380px] lg:shrink-0 lg:sticky lg:top-24 scroll-mt-24"
@@ -502,6 +527,7 @@ const Plant = () => {
                     onChange={handleImageChange}
                     className="block w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 file:cursor-pointer"
                   />
+
                   {editingId && (
                     <p className="text-xs text-gray-500 mt-1.5">
                       Leave empty to keep the current image.
@@ -591,12 +617,15 @@ const Plant = () => {
                 {form.category && !loadingTypes && formPlantTypes.length === 0 && (
                   <p className="text-xs text-gray-500 -mt-2">
                     No plant types for this category yet.{" "}
+
+                     {isAdmin && (
                     <Link
                       to="/plantType"
                       className="text-green-700 font-medium hover:underline"
                     >
                       Add one here
                     </Link>
+                     )}
                   </p>
                 )}
 
@@ -756,6 +785,7 @@ const Plant = () => {
               </form>
             </div>
           </div>
+          )}
 
           <div className="w-full min-w-0 flex-1">
             <div className="bg-white rounded-2xl shadow-lg border border-green-100 p-6 sm:p-8">
@@ -764,7 +794,10 @@ const Plant = () => {
                   All Plants
                 </h2>
                 <p className="text-gray-500 text-sm">
-                  Search and filter your plant collection
+                  {/* Search and filter your plant collection */}
+                  {isAdmin
+                    ? "Search and filter your plant collection"
+                    : "Search and explore plants available in our nursery"}
                 </p>
               </div>
 
@@ -816,7 +849,10 @@ const Plant = () => {
                 <div className="text-center py-16">
                   <div className="text-5xl mb-3">🌱</div>
                   <p className="text-gray-500 text-sm">
-                    No plants found. Add one using the form.
+                    {/* No plants found. Add one using the form. */}
+                    {isAdmin
+                      ? "No plants found. Add one using the form."
+                      : "No plants are currently available."}
                   </p>
                 </div>
               ) : (
@@ -895,6 +931,7 @@ const Plant = () => {
                           </span>
                         </div>
 
+                        {isAdmin && (
                         <div className="flex gap-2 mt-auto">
                           <button
                             type="button"
@@ -914,6 +951,7 @@ const Plant = () => {
                               : "Delete"}
                           </button>
                         </div>
+                        )}
                       </div>
                     </div>
                   ))}

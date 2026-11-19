@@ -89,6 +89,8 @@ const AccessDenied = ({ loggedIn }: { loggedIn: boolean }) => (
 );
 
 const ProductManager = () => {
+  const role = getUserRole();
+  const isAdmin = role === "ADMIN";
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [count, setCount] = useState(0);
   const [searchInput, setSearchInput] = useState("");
@@ -122,7 +124,8 @@ const ProductManager = () => {
         const result = await getProducts({
           search: search || undefined,
           category: categoryFilter || undefined,
-          status: statusFilter || undefined,
+          // status: statusFilter || undefined,
+          status: isAdmin ? statusFilter || undefined : "Active",
         });
 
         setProducts(result.products);
@@ -186,6 +189,7 @@ const ProductManager = () => {
   const hasFilters = searchInput || categoryFilter || statusFilter;
 
   const startEdit = (product: ProductItem) => {
+    if (!isAdmin) return;
     setFormError("");
     setFormSuccess("");
     setEditingId(product.productId);
@@ -207,6 +211,9 @@ const ProductManager = () => {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (!isAdmin) return;
+    
     if (saving) return;
 
     setFormError("");
@@ -269,6 +276,7 @@ const ProductManager = () => {
   };
 
   const handleToggleStatus = async (product: ProductItem) => {
+    if (!isAdmin) return;
     if (togglingId) return;
 
     const deactivating = product.status === "Active";
@@ -315,10 +323,22 @@ const ProductManager = () => {
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="inline-flex items-center gap-2 bg-white/70 text-green-700 text-sm font-medium px-4 py-1.5 rounded-full mb-5 shadow-sm">
             <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-            Admin · Nursery Management
+            {isAdmin ? "Admin · Nursery Management" : "Nursery Products"}
+            {/* Admin · Nursery Management */}
           </div>
-
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-800 leading-tight mb-4">
+            {isAdmin ? "Manage your" : "Explore our"}
+            <br />
+            <span className="text-green-700">products</span>
+          </h1>
+
+          <p className="text-gray-600 text-lg leading-relaxed mb-6 max-w-xl">
+            {isAdmin
+              ? "Register fertilizers, seeds and other nursery products, update their prices and control which ones customers can see."
+              : "Explore fertilizers, seeds and other nursery products available at our nursery."}
+          </p>
+
+          {/* <h1 className="text-4xl sm:text-5xl font-bold text-gray-800 leading-tight mb-4">
             Manage your
             <br />
             <span className="text-green-700">products</span>
@@ -327,7 +347,7 @@ const ProductManager = () => {
           <p className="text-gray-600 text-lg leading-relaxed mb-6 max-w-xl">
             Register fertilizers, seeds and other nursery products, update
             their prices and control which ones customers can see.
-          </p>
+          </p> */}
 
           <div className="flex flex-wrap items-center gap-3">
             <Link
@@ -348,6 +368,7 @@ const ProductManager = () => {
 
       <main className="py-12 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 items-start">
+          {isAdmin && (
           <div
             ref={formRef}
             className="w-full lg:w-[380px] lg:shrink-0 lg:sticky lg:top-24 scroll-mt-24"
@@ -557,6 +578,7 @@ const ProductManager = () => {
               </form>
             </div>
           </div>
+          )}
 
           <div className="w-full min-w-0 flex-1">
             <div className="bg-white rounded-2xl shadow-lg border border-green-100 p-6 sm:p-8">
@@ -565,7 +587,10 @@ const ProductManager = () => {
                   All Products
                 </h2>
                 <p className="text-gray-500 text-sm">
-                  Search by name or product ID, or filter by category and status
+                  {/* Search by name or product ID, or filter by category and status */}
+                  {isAdmin
+                    ? "Search by name or product ID, or filter by category and status"
+                    : "Browse available products and their prices"}
                 </p>
               </div>
 
@@ -592,7 +617,8 @@ const ProductManager = () => {
                     </option>
                   ))}
                 </select>
-
+                
+                {isAdmin && (
                 <select
                   className={inputClass}
                   value={statusFilter}
@@ -607,6 +633,7 @@ const ProductManager = () => {
                     </option>
                   ))}
                 </select>
+                )}
 
                 <button
                   type="button"
@@ -697,6 +724,7 @@ const ProductManager = () => {
                             </p>
                           </div>
 
+                          {isAdmin && (
                           <span
                             className={`shrink-0 text-xs font-semibold px-3 py-1 rounded-full border ${
                               inactive
@@ -706,6 +734,7 @@ const ProductManager = () => {
                           >
                             {product.status}
                           </span>
+                        )}
                         </div>
 
                         <span className="self-start bg-white text-green-700 text-xs font-medium px-3 py-1 rounded-full border border-green-200 mb-3">
@@ -740,6 +769,7 @@ const ProductManager = () => {
                             </p>
                           </div>
 
+                          {isAdmin && (
                           <div className="bg-green-50 border border-green-100 rounded-xl px-3 py-2">
                             <p className="text-xs text-gray-500">
                               Buying Price
@@ -748,6 +778,7 @@ const ProductManager = () => {
                               {formatPrice(product.buyingPrice)}
                             </p>
                           </div>
+                          )}
 
                           <div className="bg-green-50 border border-green-100 rounded-xl px-3 py-2">
                             <p className="text-xs text-gray-500">
@@ -759,6 +790,7 @@ const ProductManager = () => {
                           </div>
                         </div>
 
+                        {isAdmin && (
                         <div className="flex gap-2 mt-auto">
                           <button
                             type="button"
@@ -785,6 +817,7 @@ const ProductManager = () => {
                               : "Deactivate"}
                           </button>
                         </div>
+                        )}
                       </div>
                     );
                   })}
@@ -799,11 +832,11 @@ const ProductManager = () => {
 };
 
 const Products = () => {
-  const role = getUserRole();
+  // const role = getUserRole();
 
-  if (role !== "ADMIN") {
-    return <AccessDenied loggedIn={role !== null} />;
-  }
+  // if (role !== "ADMIN") {
+  //   return <AccessDenied loggedIn={role !== null} />;
+  // }
 
   return <ProductManager />;
 };
