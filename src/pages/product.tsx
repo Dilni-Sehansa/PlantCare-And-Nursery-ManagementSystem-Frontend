@@ -63,30 +63,30 @@ const isValidPrice = (value: string) =>
 
 const formatPrice = (value: number) => `Rs. ${Number(value).toLocaleString()}`;
 
-const AccessDenied = ({ loggedIn }: { loggedIn: boolean }) => (
-  <div className="min-h-screen bg-green-50">
-    <Navbar />
-    <div className="pt-32 px-6 flex justify-center">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-lg border border-green-100 p-10 text-center">
-        <div className="text-5xl mb-4">🔒</div>
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">
-          {loggedIn ? "Admin access only" : "Please log in"}
-        </h1>
-        <p className="text-gray-500 text-sm mb-6">
-          {loggedIn
-            ? "Only administrators can manage products."
-            : "Log in with an administrator account to manage products."}
-        </p>
-        <Link
-          to={loggedIn ? "/" : "/login"}
-          className="inline-block bg-green-700 hover:bg-green-800 text-white font-semibold px-8 py-3 rounded-xl shadow-md transition"
-        >
-          {loggedIn ? "Back to Home" : "Go to Login"}
-        </Link>
-      </div>
-    </div>
-  </div>
-);
+// const AccessDenied = ({ loggedIn }: { loggedIn: boolean }) => (
+//   <div className="min-h-screen bg-green-50">
+//     <Navbar />
+//     <div className="pt-32 px-6 flex justify-center">
+//       <div className="max-w-md w-full bg-white rounded-2xl shadow-lg border border-green-100 p-10 text-center">
+//         <div className="text-5xl mb-4">🔒</div>
+//         <h1 className="text-2xl font-bold text-gray-800 mb-2">
+//           {loggedIn ? "Admin access only" : "Please log in"}
+//         </h1>
+//         <p className="text-gray-500 text-sm mb-6">
+//           {loggedIn
+//             ? "Only administrators can manage products."
+//             : "Log in with an administrator account to manage products."}
+//         </p>
+//         <Link
+//           to={loggedIn ? "/" : "/login"}
+//           className="inline-block bg-green-700 hover:bg-green-800 text-white font-semibold px-8 py-3 rounded-xl shadow-md transition"
+//         >
+//           {loggedIn ? "Back to Home" : "Go to Login"}
+//         </Link>
+//       </div>
+//     </div>
+//   </div>
+// );
 
 const ProductManager = () => {
   const role = getUserRole();
@@ -139,7 +139,7 @@ const ProductManager = () => {
     };
 
     loadProducts();
-  }, [search, categoryFilter, statusFilter, reloadKey]);
+  }, [search, categoryFilter, statusFilter, reloadKey, isAdmin]);
 
   useEffect(() => {
     const timer = setTimeout(() => setSearch(searchInput.trim()), 400);
