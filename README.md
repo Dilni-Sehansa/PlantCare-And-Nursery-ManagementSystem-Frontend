@@ -1,75 +1,274 @@
-# React + TypeScript + Vite
+# 🌿 Plant Care and Nursery Management System – Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 📌 Overview
 
-Currently, two official plugins are available:
+The Plant Care and Nursery Management System Frontend is a modern, responsive web application developed to provide an interactive platform for customers and administrators to manage nursery-related activities.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+The frontend is developed using React.js and TypeScript, with Vite as the development and build tool.
 
-## React Compiler
+It communicates with the backend REST API to manage users, plants, products, orders, payments, suppliers, and inventory operations.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🛠️ Technologies Used
 
-## Expanding the ESLint configuration
+- React.js
+- TypeScript
+- Vite
+- Tailwind CSS
+- Axios
+- React Router DOM
+- HTML5
+- CSS3
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## ✨ Main Features
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 🏠 Home Page
+- Modern landing page.
+- Hero section.
+- Featured plants.
+- New arrivals.
+- Plant categories.
+- Plant care tips.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### 👤 User Authentication
+- User registration.
+- User login.
+- Email verification.
+- Forgot password functionality.
+- Access token management.
+- Refresh token handling.
+- Protected routes.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 🌱 Plant Management
+- View available plants.
+- Browse plant information.
+- View plant details.
+- Plant category management.
 
+### 🛒 Product Management
+- View available products.
+- Product information management.
+- Product image display.
+- Product management functionality.
+
+### 📦 Order Management
+- Place orders.
+- View customer orders.
+- Order history.
+- Admin order management.
+- Order image display.
+
+### 🏪 Inventory Management
+- Internal stock management.
+- Stock purchase management.
+- Stock usage management.
+- Product sales management.
+
+### 🤝 Supplier Management
+- View supplier information.
+- Manage supplier records.
+
+### 👑 Super Admin Management
+- User management.
+- Admin management.
+- Super Admin dashboard.
+- User role management.
+
+### 💳 Payment Management
+- Payment interface.
+- Demo payment functionality.
+- Payment-related order handling.
+
+## 🏗️ Project Structure
+
+```text
+plantcare-frontend/
+│
+├── public/
+│
+├── src/
+│   ├── assets/
+│   │   ├── img/
+│   │   ├── hero.png
+│   │   └── logo.png
+│   │
+│   ├── component/
+│   │   ├── common/
+│   │   ├── home/
+│   │   ├── managementCenter/
+│   │   ├── order/
+│   │   ├── plant/
+│   │   └── superAdmin/
+│   │
+│   ├── context/
+│   │   └── AuthContext.tsx
+│   │
+│   ├── data/
+│   │   ├── internalStock.ts
+│   │   ├── internalStockUsage.ts
+│   │   ├── orders.ts
+│   │   ├── plants.ts
+│   │   ├── plantType.ts
+│   │   ├── product.ts
+│   │   ├── productSales.ts
+│   │   ├── stock.ts
+│   │   ├── stockPurchase.ts
+│   │   └── suppliers.ts
+│   │
+│   ├── hooks/
+│   │   └── useAuth.ts
+│   │
+│   ├── pages/
+│   │   ├── admin.tsx
+│   │   ├── adminOrders.tsx
+│   │   ├── demoPayment.tsx
+│   │   ├── forgotPassword.tsx
+│   │   ├── home.tsx
+│   │   ├── login.tsx
+│   │   ├── managementCenter.tsx
+│   │   ├── myOrders.tsx
+│   │   ├── orders.tsx
+│   │   ├── plants.tsx
+│   │   ├── plantType.tsx
+│   │   ├── product.tsx
+│   │   ├── register.tsx
+│   │   ├── stock.tsx
+│   │   ├── superAdmin.tsx
+│   │   ├── suppliers.tsx
+│   │   └── verifyEmail.tsx
+│   │
+│   ├── router/
+│   │   └── index.tsx
+│   │
+│   ├── service/
+│   │   ├── api.ts
+│   │   ├── auth.ts
+│   │   └── user.ts
+│   │
+│   ├── App.tsx
+│   ├── App.css
+│   ├── index.css
+│   └── main.tsx
+│
+├── index.html
+├── package.json
+├── vite.config.ts
+└── tsconfig.json
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+## ⚙️ Installation and Setup
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### 1. Clone the Repository
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+git clone YOUR_FRONTEND_GITHUB_REPOSITORY_URL
 ```
+
+Navigate to the frontend project directory:
+
+```bash
+cd plantcare-frontend
+```
+
+### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+### 3. Configure Environment Variables
+
+Create a `.env` file in the frontend root directory.
+
+Add the backend API URL:
+
+```env
+VITE_API_BASE_URL=http://localhost:5000/api
+```
+
+For production deployment, configure `VITE_API_BASE_URL` with the deployed backend API URL.
+
+### 4. Run the Development Server
+
+```bash
+npm run dev
+```
+
+The frontend will run at:
+
+```text
+http://localhost:5173
+```
+
+## 🔗 Backend Integration
+
+The frontend communicates with the backend using Axios.
+
+The API service handles:
+
+- API requests.
+- Authentication headers.
+- Access token management.
+- Refresh token handling.
+- Automatic retry after token refresh.
+- API error handling.
+
+Make sure the backend server is running before using the application.
+
+## 🧪 Build for Production
+
+Create a production build:
+
+```bash
+npm run build
+```
+
+Preview the production build:
+
+```bash
+npm run preview
+```
+
+## 📜 Available Scripts
+
+| Command | Description |
+|---|---|
+| `npm install` | Install dependencies |
+| `npm run dev` | Start development server |
+| `npm run build` | Build application for production |
+| `npm run lint` | Run ESLint |
+| `npm run preview` | Preview production build |
+
+## 🚀 Deployment
+
+The frontend can be deployed using platforms such as Vercel.
+
+For production deployment:
+
+1. Push the frontend source code to GitHub.
+2. Import the GitHub repository into Vercel.
+3. Configure the build settings.
+4. Add the `VITE_API_BASE_URL` environment variable.
+5. Deploy the application.
+
+## 🔒 Security
+
+- Protected routes.
+- JWT-based authentication.
+- Role-based access handling.
+- Authentication context.
+- Secure API communication.
+- Access token refresh handling.
+
+## 👩‍💻 Author
+
+Developed as part of the Plant Care and Nursery Management System project.
+
+## 📄 License
+
+This project is developed for educational and software development purposes.
+
+---
+
+**Plant Care and Nursery Management System** 🌿
+
+*Growing Better. Managing Smarter.*
